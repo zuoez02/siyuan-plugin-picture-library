@@ -1,0 +1,15 @@
+{
+  "name": "siyuan-plugin-picture-library",
+  "author": "zuoez02",
+  "url": "https://github.com/zuoez02/siyuan-plugin-picture-library",
+  "version": "0.1.0",
+  "displayName": {
+    "default": "图库"
+  },
+  "description": {
+    "default": "图库插件，将思源变成你的图片管理器，为你的数字花园新增一种新的玩法"
+  },
+  "readme": {
+    "default": "README.md"
+  }
+}

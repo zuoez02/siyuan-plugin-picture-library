@@ -1,0 +1,19 @@
+{
+    "title": "图库",
+    "mode": "模式",
+    "size": "尺寸",
+    "sort": "排序",
+    "append": "新增",
+    "delete": "删除",
+    "refresh": "刷新",
+    "mangaSize": "漫画宽度",
+    "manga": "漫画",
+    "grid": "方格",
+    "min": "最小化",
+    "nameIncrease": "名称递增",
+    "nameDescrease": "名称递减",
+    "loadFailed": "加载失败",
+    "add": "添加",
+    "copyLink": "复制链接",
+    "dragHoverTitle": "拖放文件以上传，限制类型'png', 'jpg', 'jpeg', 'webp'"
+}

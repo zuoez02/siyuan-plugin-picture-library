@@ -1,0 +1,4 @@
+.el-tree {
+    --el-fill-color-blank: transparent;
+    --el-tree-node-hover-bg-color: transparent;
+}

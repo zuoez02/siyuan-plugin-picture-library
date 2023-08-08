@@ -1,0 +1,37 @@
+{
+  "name": "siyuan-plugin-picture-library",
+  "version": "0.3.2",
+  "description": "思源picture-library Plugin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zuoez02/siyuan-plugin-picture-library.git"
+  },
+  "keywords": [],
+  "author": "zuoez02",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zuoez02/siyuan-plugin-picture-library/issues"
+  },
+  "homepage": "https://github.com/zuoez02/siyuan-plugin-picture-library#readme",
+  "devDependencies": {
+    "eslint": "^8.43.0",
+    "eslint-plugin-react": "^7.32.2",
+    "vite": "^4.3.9"
+  },
+  "dependencies": {
+    "@vitejs/plugin-vue": "^4.2.3",
+    "@vue/tsconfig": "^0.4.0",
+    "element-plus": "^2.3.9",
+    "lodash": "^4.17.21",
+    "prettier": "^2.8.8",
+    "siyuan": "^0.7.9",
+    "typescript": "^5.1.6",
+    "unplugin-auto-import": "^0.16.6",
+    "unplugin-vue-components": "^0.25.1",
+    "vue": "^3.3.4"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch"
+  }
+}
