@@ -2,7 +2,7 @@
   "name": "siyuan-plugin-picture-library",
   "author": "zuoez02",
   "url": "https://github.com/zuoez02/siyuan-plugin-picture-library",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "displayName": {
     "default": "图库"
   },

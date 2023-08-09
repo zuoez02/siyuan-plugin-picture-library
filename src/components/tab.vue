@@ -28,7 +28,7 @@
             <!-- {{ setting }} -->
         </div>
         <div class="image-wall" v-if="setting.mode === 'grid'">
-            <el-image :key="f" v-for="(f, $i) in sortedFiles" class="sppl-image" :style="gridStyle" :src="f" fit="cover"
+            <el-image :key="f" v-for="(f, $i) in sortedFiles" class="sppl-image" :style="gridStyle" :src="f" fit="cover" @contextmenu="onContextClick(f, $event)"
                 :initial-index="$i" :preview-src-list="sortedFiles" :lazy="true" loading="lazy">
                 <template #error>
                     <div class="image-slot" @click="() => sm(f)">{{ _('loadFailed') }}</div>
@@ -36,7 +36,7 @@
             </el-image>
         </div>
         <div class="manga-wall" v-if="setting.mode === 'manga'">
-            <el-image :key="f" v-for="(f, $i) in sortedFiles" class="sppl-manga" :style="mangaStyle" :src="f" fit="cover"
+            <el-image :key="f" v-for="(f, $i) in sortedFiles" class="sppl-manga" :style="mangaStyle" :src="f" fit="cover"  @contextmenu="onContextClick(f, $event)"
                 :initial-index="$i" :preview-src-list="sortedFiles" :lazy="true" loading="lazy">
                 <template #error>
                     <div class="image-slot" @click="() => sm(f)">{{ _('loadFailed') }}</div>
@@ -51,7 +51,7 @@
 <script setup>
 import { computed, inject, onMounted, ref, watch } from 'vue';
 import { getFiles } from '../storage/file';
-import { showMessage } from 'siyuan';
+import { showMessage, Menu } from 'siyuan';
 import { FILE_EXT } from '../util/constants';
 import { _ } from '../util/i18n';
 
@@ -133,6 +133,36 @@ const onDrop = async (e) => {
     closeHover(e);
 }
 const onDragLeave = (e) => closeHover(e);
+
+const copyImageBlock = (path) => {
+  // @ts-ignore
+  const id = window.Lute.NewNodeID();
+  const date = new Date();
+  const d = `${date.getFullYear()}${date.getMonth()}${date.getDay()}${date.getHours()}${date.getMinutes()}${date.getSeconds()}`
+  const block = `![image](${path})
+{: id="${id}" updated="${d}"}`
+  navigator.clipboard.writeText(block);
+};
+
+const copyUrl = (path) => {
+  navigator.clipboard.writeText(path);
+};
+
+const onContextClick = (f, e) => {
+    const m = new Menu('sppl-menu');
+    m.addItem({
+        label: _('copyPath'),
+        icon: 'iconCopy',
+        click: () => copyUrl(f),
+    })
+    m.addItem({
+        label: _('copyImageBlock'),
+        icon: 'iconCopy',
+        click: () => copyImageBlock(f),
+    })
+    m.open({x: e.pageX, y: e.pageY });
+}
+
 
 // const plugin = inject('plugin');
 </script>
