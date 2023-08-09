@@ -5,6 +5,7 @@ import {
     getFiles,
 } from './file';
 import { reactive } from 'vue';
+import { FILE_EXT } from '../util/constants';
 
 export class Storage {
     folders = reactive([]);
@@ -120,7 +121,7 @@ export class Storage {
     }
 
     async addFiles(p, files) {
-        return Promise.all(Array.from(files).filter(f => ['png', 'jpg', 'jpeg', 'webp'].some(g => f.name.endsWith(g))).map(f => {
+        return Promise.all(Array.from(files).filter(f => FILE_EXT.some(g => f.name.toLowerCase().endsWith(g))).map(f => {
             const fp = `${p}/${f.name}`;
             return addFile(fp, f);
         }));

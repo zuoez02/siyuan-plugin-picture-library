@@ -52,6 +52,7 @@
 import { computed, inject, onMounted, ref, watch } from 'vue';
 import { getFiles } from '../storage/file';
 import { showMessage } from 'siyuan';
+import { FILE_EXT } from '../util/constants';
 import { _ } from '../util/i18n';
 
 const { path } = inject('folder');
@@ -94,7 +95,7 @@ onMounted(() => {
 
 const getImages = () => {
     getFiles(path).then((list) => {
-        files.value = list.filter(l => ['png', 'jpg', 'jpeg', 'webp'].some(t => l.name.endsWith(t))).map(l => l.url);
+        files.value = list.filter(l => FILE_EXT.some(t => l.name.toLowerCase().endsWith(t))).map(l => l.url);
     });
 }
 

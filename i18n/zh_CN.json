@@ -15,5 +15,5 @@
     "loadFailed": "加载失败",
     "add": "添加",
     "copyLink": "复制链接",
-    "dragHoverTitle": "拖放文件以上传，限制类型'png', 'jpg', 'jpeg', 'webp'"
+    "dragHoverTitle": "拖放文件以上传"
 }

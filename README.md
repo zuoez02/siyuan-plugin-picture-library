@@ -18,3 +18,12 @@
 小贴士：
 1. 存储目录目前固定位置为/data/public/siyuan-plugin-picture-library/，你可以直接将你的图片文件夹放入到这个目录下，点击dock中的刷新按钮即可更新
 2. 点击复制按钮，即可复制出当前文件夹的链接，可以直接粘贴到文档中，点击展开tab
+
+## Changelog
+
++ v0.1.1
+  - 修复文件扩展名大小写导致的问题
+  - 增加支持格式'.png', '.jpg', '.jpeg', '.jfif', '.pjpeg', '.pjp', '.webp', '.apng', '.avif', '.gif', '.svg', '.tif', '.tiff'
+
++ v0.1.0
+  - First commit
