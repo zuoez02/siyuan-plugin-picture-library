@@ -16,6 +16,12 @@
     "add": "添加",
     "copyLink": "复制链接",
     "copyPath": "复制图片URL",
+    "copyCarousel": "复制展示面板",
     "copyImageBlock": "复制为图片块",
-    "dragHoverTitle": "拖放文件以上传"
+    "dragHoverTitle": "拖放文件以上传",
+    "changeHeight": "图库:修改跑马灯高度",
+    "height": "高度",
+    "inputHeight": "输入高度",
+    "cancel": "取消",
+    "confirm": "确定"
 }

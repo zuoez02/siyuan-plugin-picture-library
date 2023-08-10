@@ -95,6 +95,21 @@ const renderContent = (
       h(
         'a',
         {
+          style: 'margin-left: 8px',
+          onClick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const randomId = window.Lute.NewNodeID();
+            const content = `<div id="${randomId}" data-plugin="siyuan-plugin-picture-library" data-height="400px" data-path="${data.path}">请使用Siyuan Plugin Picture Library插件已使用此自定义块内容</div>`;
+            navigator.clipboard.writeText(content);
+          },
+        },
+        h('span', { 'class': 'sppl-icon b3-tooltips b3-tooltips__w', 'aria-label': _('copyCarousel') }, h('svg', null, h('use', { 'xlink:href': `#iconDock` })))
+      ),
+      h(
+        'a',
+        {
+          style: 'margin-left: 8px',
           onClick: (e) => copy(data, e),
         },
         h('span', { 'class': 'sppl-icon b3-tooltips b3-tooltips__w', 'aria-label': _('copyLink') }, h('svg', null, h('use', { 'xlink:href': '#iconCopy' })))
@@ -114,7 +129,7 @@ const renderContent = (
           onClick: (e) => remove(data, e),
         },
         h('span', { 'class': 'sppl-icon b3-tooltips b3-tooltips__w', 'aria-label': _('delete') }, h('svg', null, h('use', { 'xlink:href': '#iconTrashcan' })))
-      )
+      ),
     )
   )
 }

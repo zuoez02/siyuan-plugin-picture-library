@@ -7,7 +7,10 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    Carousel: typeof import('./src/components/carousel.vue')['default']
     Dock: typeof import('./src/components/dock.vue')['default']
+    ElCarousel: typeof import('element-plus/es')['ElCarousel']
+    ElCarouselItem: typeof import('element-plus/es')['ElCarouselItem']
     ElImage: typeof import('element-plus/es')['ElImage']
     ElTree: typeof import('element-plus/es')['ElTree']
     FileDialog: typeof import('./src/components/file-dialog.vue')['default']

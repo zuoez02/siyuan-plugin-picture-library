@@ -96,7 +96,6 @@ export class Storage {
     async refresh() {
         const tree = [];
         await this.getFolders(tree, this.basePath);
-        // console.log(tree);
         this.folders.splice(0, this.folders.length);
         tree.forEach((t => this.folders.push(t)));
         this.plugin.saveFiles();
