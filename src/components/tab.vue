@@ -101,15 +101,34 @@ const getImages = () => {
 
 const sm = (f) => showMessage(f);
 
-// const delay = 200;
+const downloadUri = (uri, path) => {
+    const filename = new URL(uri).pathname.split('/').pop();
+    return fetch(uri).then(async res => {
+        const blob = await res.blob();
+        if (FILE_EXT.every((e) => !filename.endsWith(e))) {
+            const ext = res.headers.get('Content-Type').split('/')[1];
+            if (FILE_EXT.every((e) => ('.' + ext) !== e)) {
+                return null;
+            }
+            return {
+                filename: filename + '.' + ext,
+                blob,
+            }
+        }
+        return {
+            filename,
+            blob,
+        }
+    }).then((b) => {
+        if (!b) {
+            return;
+        }
+        return plugin.storage.addFileBlob(path, b.blob, b.filename);
+    })
+}
 
 const openHover = () => {
     showDropHover.value = true;
-    // let timer = setTimeout(() => {
-    //   if (timer) {
-    //     clearTimeout(timer);
-    //   }
-    // }, delay);
 }
 
 const closeHover = (e) => {
@@ -129,9 +148,16 @@ const onDrop = async (e) => {
     if (d && d.length > 0) {
         await plugin.storage.addFiles(path, d);
         getImages();
+    } else {
+        const uri = e.dataTransfer?.getData('text/uri-list');
+        if (uri) {
+            await downloadUri(uri, path);
+            getImages();
+        }
     }
     closeHover(e);
 }
+
 const onDragLeave = (e) => closeHover(e);
 
 const copyImageBlock = (path) => {

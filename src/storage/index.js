@@ -125,4 +125,8 @@ export class Storage {
             return addFile(fp, f);
         }));
     }
+
+    async addFileBlob(p, fileBlob, filename) {
+        return addFile(p + '/' + filename, fileBlob)
+    }
 }
