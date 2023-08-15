@@ -3,6 +3,7 @@ import {
     addFolder,
     removeFolder,
     getFiles,
+    removeFile,
 } from './file';
 import { reactive } from 'vue';
 import { FILE_EXT } from '../util/constants';
@@ -128,5 +129,9 @@ export class Storage {
 
     async addFileBlob(p, fileBlob, filename) {
         return addFile(p + '/' + filename, fileBlob)
+    }
+
+    async deleteFile(p) {
+        return removeFile(p);
     }
 }

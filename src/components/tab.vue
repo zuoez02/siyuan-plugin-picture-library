@@ -25,19 +25,25 @@
                     <option v-for="k in setting.sorts" :value="k">{{ _(k) }}</option>
                 </select>
             </div>
+            <div class="tab-setting-item">
+                <button class="b3-button" style="position: relative; top: -12px" @click="onPaste">{{ _('pasteImage')
+                }}</button>
+            </div>
             <!-- {{ setting }} -->
         </div>
         <div class="image-wall" v-if="setting.mode === 'grid'">
-            <el-image :key="f" v-for="(f, $i) in sortedFiles" class="sppl-image" :style="gridStyle" :src="f" fit="cover" @contextmenu="onContextClick(f, $event)"
-                :initial-index="$i" :preview-src-list="sortedFiles" :lazy="true" loading="lazy">
+            <el-image :key="f" v-for="(f, $i) in sortedFiles" class="sppl-image" :style="gridStyle" :src="f" fit="cover"
+                @contextmenu="onContextClick(f, $event)" :initial-index="$i" :preview-src-list="sortedFiles" :lazy="true"
+                loading="lazy">
                 <template #error>
                     <div class="image-slot" @click="() => sm(f)">{{ _('loadFailed') }}</div>
                 </template>
             </el-image>
         </div>
         <div class="manga-wall" v-if="setting.mode === 'manga'">
-            <el-image :key="f" v-for="(f, $i) in sortedFiles" class="sppl-manga" :style="mangaStyle" :src="f" fit="cover"  @contextmenu="onContextClick(f, $event)"
-                :initial-index="$i" :preview-src-list="sortedFiles" :lazy="true" loading="lazy">
+            <el-image :key="f" v-for="(f, $i) in sortedFiles" class="sppl-manga" :style="mangaStyle" :src="f" fit="cover"
+                @contextmenu="onContextClick(f, $event)" :initial-index="$i" :preview-src-list="sortedFiles" :lazy="true"
+                loading="lazy">
                 <template #error>
                     <div class="image-slot" @click="() => sm(f)">{{ _('loadFailed') }}</div>
                 </template>
@@ -51,9 +57,10 @@
 <script setup>
 import { computed, inject, onMounted, ref, watch } from 'vue';
 import { getFiles } from '../storage/file';
-import { showMessage, Menu } from 'siyuan';
+import { showMessage, Menu, confirm } from 'siyuan';
 import { FILE_EXT } from '../util/constants';
 import { _ } from '../util/i18n';
+import { getPngFunc } from '../util/image';
 
 const { path } = inject('folder');
 const plugin = inject('plugin');
@@ -88,6 +95,51 @@ const gridStyle = computed(() => ({
 const mangaStyle = computed(() => ({
     width: `${setting.value.mangaSize}`,
 }));
+
+const onPaste = async () => {
+    try {
+        const item_list = await navigator.clipboard.read();
+        const blob = await item_list[0]?.getType('image/png');
+        if (!blob) {
+            return;
+        }
+        const id = window.Lute.NewNodeID();
+        await plugin.storage.addFileBlob(path, blob, `${id}.png`);
+        getImages();
+    } catch (e) {
+        console.error(e);
+        try {
+            const { clipboard } = window.require('electron');
+            const image = clipboard.readImage('clipboard');
+            if (!image) {
+                return;
+            }
+            const img = image.toDataURL();
+            const type = /^data:(.*);/.exec(img);
+            if (!type || !type[1]) {
+                return;
+            }
+            const isPng = type[1] === 'image/png';
+            const isJpeg = type[1] === 'image/jpeg';
+            let buffer;
+            if (isPng) {
+                buffer = image.toPNG();
+            } else if (isJpeg) {
+                buffer = image.toJPEG();
+            } else {
+                return;
+            }
+            const blob = new Blob([buffer]);
+            const id = window.Lute.NewNodeID();
+            await plugin.storage.addFileBlob(path, blob, `${id}.png`);
+            getImages();
+        } catch (e) {
+            console.error(e);
+            showMessage(_('onPasteError'));
+            return;
+        }
+    }
+}
 
 onMounted(() => {
     getImages();
@@ -161,21 +213,40 @@ const onDrop = async (e) => {
 const onDragLeave = (e) => closeHover(e);
 
 const copyImageBlock = (path) => {
-  // @ts-ignore
-  const id = window.Lute.NewNodeID();
-  const date = new Date();
-  const d = `${date.getFullYear()}${date.getMonth()}${date.getDay()}${date.getHours()}${date.getMinutes()}${date.getSeconds()}`
-  const block = `![image](${path})
+    // @ts-ignore
+    const id = window.Lute.NewNodeID();
+    const date = new Date();
+    const d = `${date.getFullYear()}${date.getMonth()}${date.getDay()}${date.getHours()}${date.getMinutes()}${date.getSeconds()}`
+    const block = `![image](${path})
 {: id="${id}" updated="${d}"}`
-  navigator.clipboard.writeText(block);
+    navigator.clipboard.writeText(block);
 };
 
 const copyUrl = (path) => {
-  navigator.clipboard.writeText(path);
+    navigator.clipboard.writeText(path);
 };
+
+const copyAsPng = async (path) => {
+    const png = await getPngFunc(path);
+    return navigator.clipboard.write([new ClipboardItem({
+        'image/png': png,
+    })]);
+}
+
+const deleteFileConfirm = (path) => {
+    confirm('⚠️' + _('deleteConfirm'), _('deleteConfirmText'), async () => {
+        await plugin.storage.deleteFile('/data/' + decodeURI(path));
+        getImages();
+    });
+}
 
 const onContextClick = (f, e) => {
     const m = new Menu('sppl-menu');
+    m.addItem({
+        label: decodeURI(f.split('/').pop()),
+        icon: 'iconImage',
+    });
+    m.addSeparator();
     m.addItem({
         label: _('copyPath'),
         icon: 'iconCopy',
@@ -186,7 +257,18 @@ const onContextClick = (f, e) => {
         icon: 'iconCopy',
         click: () => copyImageBlock(f),
     })
-    m.open({x: e.pageX, y: e.pageY });
+    m.addItem({
+        label: _('copyAsPng'),
+        icon: 'iconCopy',
+        click: () => copyAsPng(f),
+    })
+    m.addSeparator();
+    m.addItem({
+        label: _('deleteFile'),
+        icon: 'iconTrashcan',
+        click: () => deleteFileConfirm(f),
+    });
+    m.open({ x: e.pageX, y: e.pageY });
 }
 
 
