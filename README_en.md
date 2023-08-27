@@ -18,6 +18,7 @@ Suggestions are welcome to the Github repository.
 3. Support ascending or descending sorting by file name, support ascending or descending sorting by file update time
 4. Support pasting pictures from the clipboard
 5. Support opening the location of the current directory in the file browser (Finder)
+6. Support upload images by click 'upload image' button
 
 ### Display panel
 1. Click the first button of the folder in the Dock "Copy Display Panel"
@@ -31,6 +32,9 @@ Tips:
 3. Support right-click on the image, copy the URL and block of the image, and paste it into the document for use
 
 ## Changelog
++ v0.3.1
+   - Support upload images by click 'upload image' button
+
 + v0.3.0
    - Support sorting by time
    - Support more functions in the tab page

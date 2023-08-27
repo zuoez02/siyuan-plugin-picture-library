@@ -26,6 +26,11 @@
                 </select>
             </div>
             <div class="tab-setting-item">
+                <button class="b3-button" @click="onUpload">{{ _('uploadImage')
+                }}</button>
+                <input ref="uploadFile" type="file" name="uploadFile" id="uploadFile" multiple style="display: none;">
+            </div>
+            <div class="tab-setting-item">
                 <button class="b3-button" @click="onPaste">{{ _('pasteImage')
                 }}</button>
             </div>
@@ -58,7 +63,7 @@
     </div>
 </template>
 <script setup>
-import { computed, inject, onMounted, ref, watch } from 'vue';
+import { computed, getCurrentInstance, inject, onMounted, ref, watch } from 'vue';
 import { getFiles } from '../storage/file';
 import { showMessage, Menu, confirm } from 'siyuan';
 import { FILE_EXT } from '../util/constants';
@@ -72,6 +77,8 @@ const plugin = inject('plugin');
 const showDropHover = ref(false);
 
 const files = ref([]);
+
+const uploadFile = ref(null);
 
 const images = computed(() => {
     return sortedFiles.value.map(l => l.url);
@@ -113,6 +120,10 @@ const gridStyle = computed(() => ({
 const mangaStyle = computed(() => ({
     width: `${setting.value.mangaSize}`,
 }));
+
+const onUpload = () => {
+    uploadFile.value.click();
+}
 
 const onPaste = async () => {
     try {
@@ -170,6 +181,10 @@ const onShowInFloder = () => {
 
 onMounted(() => {
     getImages();
+    uploadFile.value.addEventListener('change', async function() {
+        await plugin.storage.addFiles(path, this.files);
+        getImages();
+    })
 })
 
 const getImages = () => {

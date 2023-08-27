@@ -35,5 +35,7 @@
     "showInFolder": "Open in File Explorer",
     "changeSize": "Gallery: Modify the image size of the display panel",
     "contain": "contain",
-    "cover": "cover"
+    "cover": "cover",
+    "uploadImage": "Upload images"
+
 }

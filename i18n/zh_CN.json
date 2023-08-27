@@ -35,5 +35,6 @@
     "showInFolder": "在文件资源管理器中打开",
     "changeSize": "图库:修改展示面板图片大小",
     "contain": "包含",
-    "cover": "覆盖"
+    "cover": "覆盖",
+    "uploadImage": "上传图片"
 }
