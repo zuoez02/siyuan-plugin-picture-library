@@ -26,14 +26,17 @@
                 </select>
             </div>
             <div class="tab-setting-item">
-                <button class="b3-button" style="position: relative; top: -12px" @click="onPaste">{{ _('pasteImage')
+                <button class="b3-button" @click="onPaste">{{ _('pasteImage')
                 }}</button>
+            </div>
+            <div class="tab-setting-item">
+                <button class="b3-button" @click="onShowInFloder">{{ _('showInFolder') }}</button>
             </div>
             <!-- {{ setting }} -->
         </div>
         <div class="image-wall" v-if="setting.mode === 'grid'">
-            <el-image :key="f" v-for="(f, $i) in sortedFiles" class="sppl-image" :style="gridStyle" :src="f" fit="cover"
-                @contextmenu="onContextClick(f, $event)" :initial-index="$i" :preview-src-list="sortedFiles" :lazy="true"
+            <el-image :key="f" v-for="(f, $i) in images" class="sppl-image" :style="gridStyle" :src="f" fit="cover"
+                @contextmenu="onContextClick(f, $event)" :initial-index="$i" :preview-src-list="images" :lazy="true"
                 loading="lazy">
                 <template #error>
                     <div class="image-slot" @click="() => sm(f)">{{ _('loadFailed') }}</div>
@@ -41,8 +44,8 @@
             </el-image>
         </div>
         <div class="manga-wall" v-if="setting.mode === 'manga'">
-            <el-image :key="f" v-for="(f, $i) in sortedFiles" class="sppl-manga" :style="mangaStyle" :src="f" fit="cover"
-                @contextmenu="onContextClick(f, $event)" :initial-index="$i" :preview-src-list="sortedFiles" :lazy="true"
+            <el-image :key="f" v-for="(f, $i) in images" class="sppl-manga" :style="mangaStyle" :src="f" fit="cover"
+                @contextmenu="onContextClick(f, $event)" :initial-index="$i" :preview-src-list="images" :lazy="true"
                 loading="lazy">
                 <template #error>
                     <div class="image-slot" @click="() => sm(f)">{{ _('loadFailed') }}</div>
@@ -62,6 +65,7 @@ import { FILE_EXT } from '../util/constants';
 import { _ } from '../util/i18n';
 import { getPngFunc } from '../util/image';
 
+// @ts-ignore
 const { path } = inject('folder');
 const plugin = inject('plugin');
 
@@ -69,12 +73,26 @@ const showDropHover = ref(false);
 
 const files = ref([]);
 
+const images = computed(() => {
+    return sortedFiles.value.map(l => l.url);
+})
+
 const setting = ref(plugin.setting);
 
 watch(setting.value, () => plugin.saveSetting(setting.value));
 
 const sortedFiles = computed(() => {
-    return files.value.sort((a, b) => setting.value.sort === 'nameIncrease' ? compare(a, b) : compare(b, a));
+    const sort = setting.value.sort;
+    if (sort === 'nameIncrease') {
+        return files.value.sort((a, b) => compare(a.name, b.name));
+    }
+    if (sort === 'nameDecrease') {
+        return files.value.sort((a, b) => compare(b.name, a.name));
+    }
+    if (sort === 'dateIncrease') {
+        return files.value.sort((a, b) => compare(a.updated, b.updated));
+    }
+    return files.value.sort((a, b) => compare(b.updated, a.updated));
 })
 
 const compare = (a, b) => {
@@ -103,12 +121,13 @@ const onPaste = async () => {
         if (!blob) {
             return;
         }
+        // @ts-ignore
         const id = window.Lute.NewNodeID();
         await plugin.storage.addFileBlob(path, blob, `${id}.png`);
         getImages();
     } catch (e) {
-        console.error(e);
         try {
+            // @ts-ignore
             const { clipboard } = window.require('electron');
             const image = clipboard.readImage('clipboard');
             if (!image) {
@@ -130,6 +149,7 @@ const onPaste = async () => {
                 return;
             }
             const blob = new Blob([buffer]);
+            // @ts-ignore
             const id = window.Lute.NewNodeID();
             await plugin.storage.addFileBlob(path, blob, `${id}.png`);
             getImages();
@@ -141,13 +161,20 @@ const onPaste = async () => {
     }
 }
 
+const onShowInFloder = () => {
+    // @ts-ignore
+    const {shell} = window.require('@electron/remote') // deconstructing assignment
+    const absPath = window.siyuan.config.system.workspaceDir + path;
+    shell.showItemInFolder(absPath);
+}
+
 onMounted(() => {
     getImages();
 })
 
 const getImages = () => {
     getFiles(path).then((list) => {
-        files.value = list.filter(l => FILE_EXT.some(t => l.name.toLowerCase().endsWith(t))).map(l => l.url);
+        files.value = list.filter(l => FILE_EXT.some(t => l.name.toLowerCase().endsWith(t)));
     });
 }
 
@@ -328,6 +355,11 @@ html[data-theme-mode='light'] .tab-setting {
 
 .tab-setting-item>div {
     display: inline-block;
+}
+
+.tab-setting-item > button {
+    position: relative;
+    top: -13px;
 }
 
 .tab-setting-item>.b3-label__text {

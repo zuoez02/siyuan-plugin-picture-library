@@ -28,9 +28,14 @@ export function updateRenderer(e) {
     if (!path || !path[1]) {
         return;
     }
+    let h, s;
     const height = /data-height="(\w+)"/.exec(content);
-    if (!height || !height[1]) {
-        return;
+    if (height && height[1]) {
+        h = height[1];
+    }
+    const size = /data-size="(\w+)"/.exec(content);
+    if (size && size[1]) {
+        s = size[1];
     }
     const shadowRoot = protyle.shadowRoot;
     const d = shadowRoot.querySelector(
@@ -41,7 +46,8 @@ export function updateRenderer(e) {
       const view = createApp(Carousel);
       view.use(ElementPlus);
       view.provide('path', path[1]);
-      view.provide('height', height[1]);
+      view.provide('height', h);
+      view.provide('size', s);
       view.mount(d);
       rendereMap.set(protyle, view);
       d.insertAdjacentHTML('afterbegin', `<style>${style}</style>`)

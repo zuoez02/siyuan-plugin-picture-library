@@ -2,14 +2,20 @@
   "name": "siyuan-plugin-picture-library",
   "author": "zuoez02",
   "url": "https://github.com/zuoez02/siyuan-plugin-picture-library",
-  "version": "0.2.3",
+  "version": "0.3.0",
+  "minAppVersion": "2.10.1",
+  "backends": ["windows", "linux", "darwin"],
+  "frontends": ["desktop"],
   "displayName": {
-    "default": "图库"
+    "default": "图库",
+    "en_US": "Gallery"
   },
   "description": {
-    "default": "图库插件，将思源变成你的图片管理器，为你的数字花园新增一种新的玩法"
+    "default": "图库插件，将思源变成你的图片管理器，为你的数字花园新增一种新的玩法",
+    "en_US": "Gallery plugin, turn Siyuan into your picture manager, and add a new way to play your digital garden"
   },
   "readme": {
-    "default": "README.md"
+    "default": "README.md",
+    "en_US": "README_en.md"
   }
 }

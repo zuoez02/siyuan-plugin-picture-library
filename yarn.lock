@@ -1727,6 +1727,11 @@ side-channel@^1.0.4:
     get-intrinsic "^1.0.2"
     object-inspect "^1.9.0"
 
+siyuan-package-custom-block@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/siyuan-package-custom-block/-/siyuan-package-custom-block-1.0.2.tgz#e2f8d2b006746c52c0118a342c0afe4300bc2a76"
+  integrity sha512-AtxUbpRUoWLWeZBbSfy5D2m7cBpv+6BxJkIO7xxdF9U55QQzYE9oBatkhSIPO8jpTb3ReW3QsHzi+HBpiK5FlQ==
+
 siyuan@^0.7.9:
   version "0.7.9"
   resolved "https://registry.yarnpkg.com/siyuan/-/siyuan-0.7.9.tgz#ba2912ac2c15892973847aafb83f5d6714d69b09"

@@ -12,7 +12,7 @@ import { registerIcon } from './util/registerIcon';
 import './style.css';
 import { TAB_TYPE, ICON, CAROUSEL } from "./util/constants";
 import { updateRenderer } from './util/renderer';
-import { changeHeight } from './util/change-height';
+import { changeHeight, changeSize } from './util/update-block';
 import { changelog } from 'sy-plugin-changelog';
 
 export default class PictureLibraryPlugin extends Plugin {
@@ -28,7 +28,7 @@ export default class PictureLibraryPlugin extends Plugin {
     modes: ['grid', 'manga'],
     mode: 'grid',
     sort: 'nameIncrease',
-    sorts: ['nameIncrease', 'nameDescrease']
+    sorts: ['nameIncrease', 'nameDescrease', 'dateIncrease', 'dateDecreases']
   }
 
   onload() {
@@ -100,13 +100,16 @@ export default class PictureLibraryPlugin extends Plugin {
         return;
       }
       const height = /data-height="(\w+)"/.exec(content);
-      if (!height || !height[1]) {
-        return;
-      }
       detail.menu.addItem({
         icon: ICON,
         label: this.i18n.changeHeight,
-        click: () => changeHeight(id, height[1]),
+        click: () => changeHeight(id, height && height[1] || '400px'),
+      })
+      const size = /data-size="(\w+)"/.exec(content);
+      detail.menu.addItem({
+        icon: ICON,
+        label: this.i18n.changeSize,
+        click: () => changeSize(id, size && size[1] || 'contain'),
       })
     });
   }

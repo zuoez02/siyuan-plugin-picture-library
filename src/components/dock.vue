@@ -10,7 +10,7 @@
         <span data-type="add" class="block__icon b3-tooltips b3-tooltips__sw" :aria-label="_('add')" @click="add"><svg><use xlink:href="#iconAdd"></use></svg></span>
         <span data-type="min" class="block__icon b3-tooltips b3-tooltips__sw" :aria-label="_('min')"><svg><use xlink:href="#iconMin"></use></svg></span>
     </div>
-    <div class="fn__flex-1 plugin-sample__custom-dock">
+    <div class="fn__flex-1">
        <Filetree></Filetree>
     </div>
 </div>

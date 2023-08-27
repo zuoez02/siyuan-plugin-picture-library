@@ -1,6 +1,6 @@
 <template>
     <div class="block text-center">
-        <el-carousel :height="height" :autoplay="true">
+        <el-carousel :height="height" :autoplay="true" indicator-position="none"  >
             <el-carousel-item v-for="item in images" :key="item" :style="getStyle(item)">
             </el-carousel-item>
         </el-carousel>
@@ -13,13 +13,14 @@ import { getFiles } from '../storage/file';
 
 const path = inject('path');
 const height = inject('height');
+const size = inject('size');
 
 const images = ref([]);
 
 const getStyle = (f) => ({
     'background-image': `url(${f})`,
     'background-repeat': 'no-repeat',
-    'background-size': 'contain',
+    'background-size': size || 'contain',
     'background-position': 'center',
 })
 onMounted(() => {
@@ -27,7 +28,7 @@ onMounted(() => {
         return;
     }
     getFiles(path).then((files) => {
-        images.value = files.map((f) => f.url);
+        images.value = files.filter(f => f.url && f.isPicture).map((f) => f.url);
     })
 })
 </script>

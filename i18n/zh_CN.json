@@ -12,6 +12,8 @@
     "min": "最小化",
     "nameIncrease": "名称递增",
     "nameDescrease": "名称递减",
+    "dateIncrease": "时间递增",
+    "dateDecreases": "时间递减",
     "loadFailed": "加载失败",
     "add": "添加",
     "copyLink": "复制链接",
@@ -29,5 +31,9 @@
     "deleteFile": "删除文件",
     "deleteConfirm": "确认删除?",
     "deleteConfirmText": "确认删除此文件吗?",
-    "onPasteError": "剪贴板获取图片失败,仅支持PNG格式"
+    "onPasteError": "剪贴板获取图片失败,仅支持PNG格式",
+    "showInFolder": "在文件资源管理器中打开",
+    "changeSize": "图库:修改展示面板图片大小",
+    "contain": "包含",
+    "cover": "覆盖"
 }

@@ -1,3 +1,5 @@
+import { isPicture } from "../util/image";
+
 export const addFile = (f, file) => {
     const fd = new FormData();
     fd.append('path', f);
@@ -52,7 +54,9 @@ export const getFiles = (f) => {
                 const url = '/' + u.join('/')
                 return {
                     name: g.name,
+                    updated: g.updated,
                     type: g.isDir ? 'folder' : 'file',
+                    isPicture: isPicture(g.name),
                     path,
                     url,
                 };

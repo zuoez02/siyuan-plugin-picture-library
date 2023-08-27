@@ -1,3 +1,5 @@
+import { FILE_EXT } from "./constants";
+
 export const getPngFunc = (path) => {
     return new Promise((resolve) => {
         const img = new Image;
@@ -16,4 +18,8 @@ export const getPngFunc = (path) => {
             img.src = path
         })(path, resolve)
     })
+}
+
+export const isPicture = (name)=> {
+    return FILE_EXT.some((ext) => name?.endsWith(ext));
 }
