@@ -32,6 +32,9 @@ Tips:
 3. Support right-click on the image, copy the URL and block of the image, and paste it into the document for use
 
 ## Changelog
++ v0.3.2
+   - Support change sort in display panel.
+
 + v0.3.1
    - Support upload images by click 'upload image' button
 

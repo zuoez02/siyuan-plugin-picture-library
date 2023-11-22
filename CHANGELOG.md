@@ -1,3 +1,7 @@
+## v0.3.2
+
+- Add change sort in display panel
+
 ## v0.3.1
 
 - Fix bugs.

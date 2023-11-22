@@ -14,6 +14,7 @@
     "nameDescrease": "Name Decrease",
     "dateIncrease": "Time Increment",
     "dateDecreases": "Time Decrease",
+    "random": "random",
     "loadFailed": "Failed to load",
     "add": "Add",
     "copyLink": "Copy Link",
@@ -22,6 +23,7 @@
     "copyImageBlock": "Copy as image block",
     "dragHoverTitle": "Drag and drop files to upload",
     "changeHeight": "Gallery: Modify the height of the display panel",
+    "changeSort": "Gallery:Modify the sort of the display panel",
     "height": "height",
     "inputHeight": "Input Height",
     "cancel": "Cancel",
@@ -36,6 +38,7 @@
     "changeSize": "Gallery: Modify the image size of the display panel",
     "contain": "contain",
     "cover": "cover",
-    "uploadImage": "Upload images"
+    "uploadImage": "Upload images",
+    "overwrite": "Overwrite same name file"
 
 }
