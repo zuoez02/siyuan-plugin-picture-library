@@ -100,7 +100,8 @@ const renderContent = (
             e.preventDefault();
             e.stopPropagation();
             const randomId = window.Lute.NewNodeID();
-            const content = `<div id="${randomId}" data-plugin="siyuan-plugin-picture-library" data-height="400px" data-path="${data.path}">请使用Siyuan Plugin Picture Library插件已使用此自定义块内容</div>`;
+            const content = `<div><div id="${randomId}" data-plugin="siyuan-plugin-picture-library" data-height="400px" data-path="${data.path}">请使用Siyuan Plugin Picture Library插件已使用此自定义块内容</div></div>
+{: custom-plugin-id="siyuan-plugin-picture-library" id="${randomId}"}`;
             navigator.clipboard.writeText(content);
           },
         },

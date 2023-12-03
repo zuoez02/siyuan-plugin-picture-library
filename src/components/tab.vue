@@ -26,6 +26,10 @@
                 </select>
             </div>
             <div class="tab-setting-item">
+                <input type="checkbox" class="b3-button" v-model="setting.overwrite" >
+                <span>{{ _('overwrite') }}</span>
+            </div>
+            <div class="tab-setting-item">
                 <button class="b3-button" @click="onUpload">{{ _('uploadImage')
                 }}</button>
                 <input ref="uploadFile" type="file" name="uploadFile" id="uploadFile" multiple style="display: none;">
@@ -37,7 +41,12 @@
             <div class="tab-setting-item">
                 <button class="b3-button" @click="onShowInFloder">{{ _('showInFolder') }}</button>
             </div>
-            <!-- {{ setting }} -->
+            <div class="tab-setting-item">
+                <button class="b3-button" @click="refresh">{{ _('refresh') }}</button>
+            </div>
+            <div class="tab-setting-item">
+                <span>共 {{ images.length }} 个</span>
+            </div>
         </div>
         <div class="image-wall" v-if="setting.mode === 'grid'">
             <el-image :key="f" v-for="(f, $i) in images" class="sppl-image" :style="gridStyle" :src="f" fit="cover"
@@ -63,12 +72,13 @@
     </div>
 </template>
 <script setup>
-import { computed, getCurrentInstance, inject, onMounted, ref, watch } from 'vue';
+import { computed, inject, onMounted, ref, watch } from 'vue';
 import { getFiles } from '../storage/file';
 import { showMessage, Menu, confirm } from 'siyuan';
 import { FILE_EXT } from '../util/constants';
 import { _ } from '../util/i18n';
 import { getPngFunc } from '../util/image';
+import { reject } from 'lodash';
 
 // @ts-ignore
 const { path } = inject('folder');
@@ -179,10 +189,19 @@ const onShowInFloder = () => {
     shell.showItemInFolder(absPath);
 }
 
+const refresh = () => getImages();
+
 onMounted(() => {
     getImages();
     uploadFile.value.addEventListener('change', async function() {
-        await plugin.storage.addFiles(path, this.files);
+        await plugin.storage.addFiles(path, Array.from(this.files).map((file) => {
+            let name = file.name;
+            if (!setting.value.overwrite && images.value.some((i) => i.endsWith(file.name))) {
+                const id = window.Lute.NewNodeID();
+                name = id + '.' + name.split('.')[name.split('.').length - 1];
+            }
+            return { file, name };
+        }));
         getImages();
     })
 })
@@ -209,6 +228,9 @@ const downloadUri = (uri, path) => {
                 blob,
             }
         }
+        if (filename.endsWith('webp')) {
+            throw Error('webp not support');
+        }
         return {
             filename,
             blob,
@@ -217,7 +239,12 @@ const downloadUri = (uri, path) => {
         if (!b) {
             return;
         }
-        return plugin.storage.addFileBlob(path, b.blob, b.filename);
+        let name = b.filename;
+            if (!setting.value.overwrite && images.value.some((i) => i.endsWith(b.filename))) {
+                const id = window.Lute.NewNodeID();
+                name = id + '.' + name.split('.')[name.split('.').length - 1];
+            }
+        return plugin.storage.addFileBlob(path, b.blob, name);
     })
 }
 
@@ -239,8 +266,17 @@ const onDragOver = (e) => {
 const onDrop = async (e) => {
     e.preventDefault();
     const d = e.dataTransfer?.files;
+    console.log(d);
     if (d && d.length > 0) {
-        await plugin.storage.addFiles(path, d);
+        const files = Array.from(d).map((file) => {
+            let name = file.name;
+            if (!setting.value.overwrite && images.value.some((i) => i.endsWith(file.name))) {
+                const id = window.Lute.NewNodeID();
+                name = id + '.' + name.split('.')[name.split('.').length - 1];
+            }
+            return { file, name };
+        })
+        await plugin.storage.addFiles(path, files);
         getImages();
     } else {
         const uri = e.dataTransfer?.getData('text/uri-list');
@@ -372,7 +408,9 @@ html[data-theme-mode='light'] .tab-setting {
     display: inline-block;
 }
 
-.tab-setting-item > button {
+.tab-setting-item > button,
+.tab-setting-item > span,
+.tab-setting-item > input {
     position: relative;
     top: -13px;
 }

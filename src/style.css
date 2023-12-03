@@ -2,3 +2,7 @@
     --el-fill-color-blank: transparent;
     --el-tree-node-hover-bg-color: transparent;
 }
+
+div[custom-plugin-id="siyuan-plugin-picture-library"] > .protyle-icons {
+    display: none;
+}

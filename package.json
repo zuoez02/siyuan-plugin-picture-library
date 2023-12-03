@@ -1,6 +1,6 @@
 {
   "name": "siyuan-plugin-picture-library",
-  "version": "0.2.3",
+  "version": "0.3.2",
   "description": "思源picture-library Plugin",
   "repository": {
     "type": "git",
@@ -33,6 +33,7 @@
     "vue": "^3.3.4"
   },
   "scripts": {
+    "make-link": "New-Item -ItemType SymbolicLink -Path \"siyuan-plugin-picture-library\" -Target \"E:\\github\\siyuan-plugin-picture-library\\\"",
     "build": "vite build",
     "dev": "vite build --watch"
   }

@@ -14,6 +14,7 @@
     "nameDescrease": "名称递减",
     "dateIncrease": "时间递增",
     "dateDecreases": "时间递减",
+    "random": "随机",
     "loadFailed": "加载失败",
     "add": "添加",
     "copyLink": "复制链接",
@@ -22,6 +23,7 @@
     "copyImageBlock": "复制为图片块",
     "dragHoverTitle": "拖放文件以上传",
     "changeHeight": "图库:修改展示面板高度",
+    "changeSort": "图库:修改展示面板排序",
     "height": "高度",
     "inputHeight": "输入高度",
     "cancel": "取消",
@@ -36,5 +38,6 @@
     "changeSize": "图库:修改展示面板图片大小",
     "contain": "包含",
     "cover": "覆盖",
-    "uploadImage": "上传图片"
+    "uploadImage": "上传图片",
+    "overwrite": "覆盖同名文件"
 }

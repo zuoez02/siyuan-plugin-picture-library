@@ -28,7 +28,7 @@ export function updateRenderer(e) {
     if (!path || !path[1]) {
         return;
     }
-    let h, s;
+    let h, s, s1;
     const height = /data-height="(\w+)"/.exec(content);
     if (height && height[1]) {
         h = height[1];
@@ -36,6 +36,10 @@ export function updateRenderer(e) {
     const size = /data-size="(\w+)"/.exec(content);
     if (size && size[1]) {
         s = size[1];
+    }
+    const sort = /data-sort="(\w+)"/.exec(content);
+    if (sort && sort[1]) {
+        s1 = sort[1];
     }
     const shadowRoot = protyle.shadowRoot;
     const d = shadowRoot.querySelector(
@@ -48,6 +52,7 @@ export function updateRenderer(e) {
       view.provide('path', path[1]);
       view.provide('height', h);
       view.provide('size', s);
+      view.provide('sort', s1);
       view.mount(d);
       rendereMap.set(protyle, view);
       d.insertAdjacentHTML('afterbegin', `<style>${style}</style>`)

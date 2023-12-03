@@ -71,3 +71,46 @@ export const changeSize = async (id, size) => {
         dialog.destroy()
     });
 }
+
+export const changeSort = async (id, sort) => {
+    const content = await getKramdown(id);
+    const dialog = new Dialog({
+        title: _('changeSort'),
+        content: `<div class="b3-dialog__content" style="user-select: auto;">
+        <select class="b3-select">
+            <option value="random">${_('random')}</option>
+            <option value="nameIncrease">${_('nameIncrease')}</option>
+            <option value="nameDescrease">${_('nameDescrease')}</option>
+            <option value="dateIncrease">${_('dateIncrease')}</option>
+            <option value="dateDecreases">${_('dateDecreases')}</option>
+        </select>
+    </div>
+    <div class="b3-dialog__action">
+        <button class="b3-button b3-button--cancel">${_('cancel')}</button>
+        <div class="fn__space"></div>
+        <button class="b3-button b3-button--text">${_('confirm')}</button>
+    </div>`,
+        width: '400px',
+    });
+    const select = dialog.element.querySelector('select');
+    select.value = sort || 'contain';
+    const cancel  = dialog.element.querySelector('.b3-button--cancel')
+    const confirm = dialog.element.querySelector('.b3-button--text');
+    cancel.addEventListener('click', () => {
+        dialog.destroy();
+    });
+    confirm.addEventListener('click', () => {
+        if (!select.value.trim()) {
+            return;
+        }
+        if (content.indexOf(`data-sort="${sort}"`) === -1) {
+            const pl = 'data-plugin="siyuan-plugin-picture-library"';
+            const position = content.indexOf(pl) + pl.length;
+            const newContent = content.slice(0, position) + ` data-sort="${select.value.trim()}" ` + content.slice(position);
+            updateBlock(id, newContent);
+        } else {
+            updateBlock(id, content.replace(`data-sort="${sort}"`, `data-sort="${select.value.trim()}"`))
+        }
+        dialog.destroy()
+    });
+}

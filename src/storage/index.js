@@ -123,7 +123,7 @@ export class Storage {
     async addFiles(p, files) {
         return Promise.all(Array.from(files).filter(f => FILE_EXT.some(g => f.name.toLowerCase().endsWith(g))).map(f => {
             const fp = `${p}/${f.name}`;
-            return addFile(fp, f);
+            return addFile(fp, f.file);
         }));
     }
 
