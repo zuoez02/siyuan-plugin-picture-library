@@ -2,7 +2,7 @@
 <div class="fn__flex-1 fn__flex-column sppl-dock">
     <div class="block__icons">
         <div class="block__logo">
-            <svg><use xlink:href="#iconEmoji"></use></svg>
+            <svg class="block__logoicon"><use xlink:href="#iconEmoji"></use></svg>
             {{ _('title') }}
         </div>
         <span class="fn__flex-1 fn__space"></span>
