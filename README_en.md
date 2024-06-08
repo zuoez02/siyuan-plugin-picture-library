@@ -32,6 +32,10 @@ Tips:
 3. Support right-click on the image, copy the URL and block of the image, and paste it into the document for use
 
 ## Changelog
++ v0.4.0
+  - Support v3.0.17
+  - Hide pictures starts with dot.
+
 + v0.3.2
    - Support change sort in display panel.
 

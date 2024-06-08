@@ -7,6 +7,21 @@ import carouselcss from '../carousel.css';
 
 const rendereMap = new Map();
 
+export function html_decode(str) 
+{ 
+    var s = ""; 
+    if (str.length == 0) return ""; 
+    s = str.replace(/&amp;/g, "&"); 
+    s = s.replace(/&lt;/g, "<"); 
+    s = s.replace(/&gt;/g, ">"); 
+    s = s.replace(/&nbsp;/g, " "); 
+    s = s.replace(/&#39;/g, "\'"); 
+    s = s.replace(/&quot;/g, "\""); 
+    s = s.replace(/<br\/>/g, "\n"); 
+    return s; 
+} 
+
+
 export function getRenderer(e) {
     return rendereMap.get(e);
 }
@@ -17,13 +32,12 @@ export function updateRenderer(e) {
     if (rendereMap.has(protyle)) {
       return;
     }
-    const index = protyle
-      .getAttribute("data-content")
-      .indexOf('data-plugin="siyuan-plugin-picture-library"');
+    const content = html_decode(protyle
+      .getAttribute("data-content"));
+    const index = content.indexOf('data-plugin="siyuan-plugin-picture-library"');
     if (index < 0) {
         return;
     }
-    const content = protyle.getAttribute("data-content");
     const path = /data-path="(.*)"/.exec(content);
     if (!path || !path[1]) {
         return;

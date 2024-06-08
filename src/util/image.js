@@ -21,5 +21,5 @@ export const getPngFunc = (path) => {
 }
 
 export const isPicture = (name)=> {
-    return FILE_EXT.some((ext) => name?.endsWith(ext));
+    return !name?.startsWith('.') && FILE_EXT.some((ext) => name?.endsWith(ext));
 }

@@ -77,8 +77,7 @@ import { getFiles } from '../storage/file';
 import { showMessage, Menu, confirm } from 'siyuan';
 import { FILE_EXT } from '../util/constants';
 import { _ } from '../util/i18n';
-import { getPngFunc } from '../util/image';
-import { reject } from 'lodash';
+import { getPngFunc, isPicture } from '../util/image';
 
 // @ts-ignore
 const { path } = inject('folder');
@@ -208,7 +207,7 @@ onMounted(() => {
 
 const getImages = () => {
     getFiles(path).then((list) => {
-        files.value = list.filter(l => FILE_EXT.some(t => l.name.toLowerCase().endsWith(t)));
+        files.value = list.filter(l => isPicture(l.name));
     });
 }
 
