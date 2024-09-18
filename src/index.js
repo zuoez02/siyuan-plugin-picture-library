@@ -49,6 +49,7 @@ export default class PictureLibraryPlugin extends Plugin {
     this.tabFn = this.addTab({
       type: TAB_TYPE,
       init() {
+        this.element.classList.add("fn__flex");
         const tab = createApp(Tab);
         tab.use(ElementPlus);
         tab.provide('plugin', plugin);

@@ -1,5 +1,6 @@
 <template>
-    <div class="sppl-plugin-tab" @dragenter="onDragEnter" @dragover="onDragOver" @drop="onDrop" @dragleave="onDragLeave">
+    <div class="sppl-plugin-tab" @dragenter="onDragEnter" @dragover="onDragOver" @drop="onDrop"
+        @dragleave="onDragLeave">
         <div class="tab-setting">
             <div class="tab-setting-item">
                 <div class="b3-label__text">{{ _('mode') }}</div>
@@ -26,17 +27,17 @@
                 </select>
             </div>
             <div class="tab-setting-item">
-                <input type="checkbox" class="b3-button" v-model="setting.overwrite" >
+                <input type="checkbox" class="b3-button" v-model="setting.overwrite">
                 <span>{{ _('overwrite') }}</span>
             </div>
             <div class="tab-setting-item">
                 <button class="b3-button" @click="onUpload">{{ _('uploadImage')
-                }}</button>
+                    }}</button>
                 <input ref="uploadFile" type="file" name="uploadFile" id="uploadFile" multiple style="display: none;">
             </div>
             <div class="tab-setting-item">
                 <button class="b3-button" @click="onPaste">{{ _('pasteImage')
-                }}</button>
+                    }}</button>
             </div>
             <div class="tab-setting-item">
                 <button class="b3-button" @click="onShowInFloder">{{ _('showInFolder') }}</button>
@@ -45,7 +46,7 @@
                 <button class="b3-button" @click="refresh">{{ _('refresh') }}</button>
             </div>
             <div class="tab-setting-item">
-                <span>共 {{ images.length }} 个</span>
+                <span>共 {{ total }} 个</span>
             </div>
         </div>
         <div class="image-wall" v-if="setting.mode === 'grid'">
@@ -56,6 +57,14 @@
                     <div class="image-slot" @click="() => sm(f)">{{ _('loadFailed') }}</div>
                 </template>
             </el-image>
+            <div class="video-preview" :key="f"  v-for="(f, $i) in videoUrls"  v-on:click="() => onClickVideo(f)">
+                <video :src="f" class="sppl-video" :style="gridStyle"></video>
+                <div class="play-icon" style="">
+                    <svg><use xlink:href="#iconPlay"></use></svg>
+                </div>
+            </div>
+            
+            
         </div>
         <div class="manga-wall" v-if="setting.mode === 'manga'">
             <el-image :key="f" v-for="(f, $i) in images" class="sppl-manga" :style="mangaStyle" :src="f" fit="cover"
@@ -74,10 +83,10 @@
 <script setup>
 import { computed, inject, onMounted, ref, watch } from 'vue';
 import { getFiles } from '../storage/file';
-import { showMessage, Menu, confirm } from 'siyuan';
+import { showMessage, Menu, confirm, openTab } from 'siyuan';
 import { FILE_EXT } from '../util/constants';
 import { _ } from '../util/i18n';
-import { getPngFunc, isPicture } from '../util/image';
+import { getPngFunc } from '../util/image';
 
 // @ts-ignore
 const { path } = inject('folder');
@@ -87,15 +96,28 @@ const showDropHover = ref(false);
 
 const files = ref([]);
 
+const videos = ref([]);
+
 const uploadFile = ref(null);
 
 const images = computed(() => {
     return sortedFiles.value.map(l => l.url);
 })
 
+const videoUrls = computed(() => {
+    return videos.value.map(l => l.url);
+})
+
 const setting = ref(plugin.setting);
 
 watch(setting.value, () => plugin.saveSetting(setting.value));
+
+const total = computed(() => {
+    if (setting.mode === 'grid') {
+        return videos.value.length + images.value.length;
+    }
+    return images.value.length;
+})
 
 const sortedFiles = computed(() => {
     const sort = setting.value.sort;
@@ -183,16 +205,28 @@ const onPaste = async () => {
 
 const onShowInFloder = () => {
     // @ts-ignore
-    const {shell} = window.require('@electron/remote') // deconstructing assignment
+    const { shell } = window.require('@electron/remote') // deconstructing assignment
     const absPath = window.siyuan.config.system.workspaceDir + path;
     shell.showItemInFolder(absPath);
+}
+
+const onClickVideo = (f) => {
+    openTab({
+        app: window.siyuan.ws.app,
+        asset: {
+            path: f.slice(1),
+        },
+        position: 'right',
+        keepCursor: false,
+        removeCurrentTab: true,
+    })
 }
 
 const refresh = () => getImages();
 
 onMounted(() => {
     getImages();
-    uploadFile.value.addEventListener('change', async function() {
+    uploadFile.value.addEventListener('change', async function () {
         await plugin.storage.addFiles(path, Array.from(this.files).map((file) => {
             let name = file.name;
             if (!setting.value.overwrite && images.value.some((i) => i.endsWith(file.name))) {
@@ -206,10 +240,15 @@ onMounted(() => {
 })
 
 const getImages = () => {
-    getFiles(path).then((list) => {
-        files.value = list.filter(l => isPicture(l.name));
-    });
+    // getFiles(path).then((list) => {
+    //     files.value = list.filter(l => isPicture(l.name));
+    // });
+    return getFiles(path).then(list => {
+        files.value = list.filter(l => l.isPicture);
+        videos.value = list.filter(l => l.isVideo);
+    })
 }
+
 
 const sm = (f) => showMessage(f);
 
@@ -239,10 +278,10 @@ const downloadUri = (uri, path) => {
             return;
         }
         let name = b.filename;
-            if (!setting.value.overwrite && images.value.some((i) => i.endsWith(b.filename))) {
-                const id = window.Lute.NewNodeID();
-                name = id + '.' + name.split('.')[name.split('.').length - 1];
-            }
+        if (!setting.value.overwrite && images.value.some((i) => i.endsWith(b.filename))) {
+            const id = window.Lute.NewNodeID();
+            name = id + '.' + name.split('.')[name.split('.').length - 1];
+        }
         return plugin.storage.addFileBlob(path, b.blob, name);
     })
 }
@@ -353,12 +392,10 @@ const onContextClick = (f, e) => {
 </script>
 <style scoped>
 .tab-setting {
-    height: 40px;
-    width: 100%;
-    position: absolute;
     display: block;
     border-bottom: 1px solid var(--b3-theme-background-light);
     z-index: 1;
+    padding: 4px 8px;
 }
 
 html[data-theme-mode='dark'] .tab-setting {
@@ -371,14 +408,45 @@ html[data-theme-mode='light'] .tab-setting {
 
 
 .sppl-plugin-tab {
-    overflow: scroll;
-    height: 100%;
-    width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
 .sppl-image {
     display: inline-block;
     margin: 6px;
+}
+
+.sppl-video {
+    cursor: pointer;
+    display: inline-block;
+    margin: 6px;
+    object-fit: cover;
+}
+
+.video-preview {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.video-preview .play-icon {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    background-color: rgba(0,0,0,.5);
+    padding: 4px;
+    border-radius: 4px;
+    font-size: 12px;
+    height: 12px;
+    width: 12px;
+}
+
+.video-preview .play-icon svg {
+    font-size: 12px;
+    height: 12px;
+    width: 12px;
 }
 
 .sppl-manga {
@@ -390,38 +458,38 @@ html[data-theme-mode='light'] .tab-setting {
 
 .image-wall {
     width: 100%;
-    margin-top: 52px;
+    flex: 1 1 auto;
+    overflow-y: scroll;
 }
 
 .manga-wall {
     width: 100%;
-    padding-top: 40px;
+    flex: 1 1 auto;
+    overflow-y: scroll;
 }
 
 .tab-setting-item {
     display: inline-block;
-    margin-right: 8px;
+    margin: 4px;
+    vertical-align: middle;
 }
 
 .tab-setting-item>div {
     display: inline-block;
 }
 
-.tab-setting-item > button,
-.tab-setting-item > span,
-.tab-setting-item > input {
+.tab-setting-item>button,
+.tab-setting-item>span,
+.tab-setting-item>input {
     position: relative;
-    top: -13px;
 }
 
 .tab-setting-item>.b3-label__text {
-    padding: 6px;
-    margin-left: 12px;
+    vertical-align: middle;
 }
 
 .tab-setting-item>.b3-select {
     position: relative;
-    top: -13px;
 }
 
 .drop-hover {

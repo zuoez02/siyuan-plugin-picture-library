@@ -1,4 +1,4 @@
-import { isPicture } from "../util/image";
+import { isPicture, isVideo } from "../util/image";
 
 export const addFile = (f, file) => {
     const fd = new FormData();
@@ -57,6 +57,7 @@ export const getFiles = (f) => {
                     updated: g.updated,
                     type: g.isDir ? 'folder' : 'file',
                     isPicture: isPicture(g.name),
+                    isVideo: isVideo(g.name),
                     path,
                     url,
                 };

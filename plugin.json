@@ -2,7 +2,7 @@
   "name": "siyuan-plugin-picture-library",
   "author": "zuoez02",
   "url": "https://github.com/zuoez02/siyuan-plugin-picture-library",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "minAppVersion": "3.0.17",
   "backends": ["windows", "linux", "darwin"],
   "frontends": ["desktop"],

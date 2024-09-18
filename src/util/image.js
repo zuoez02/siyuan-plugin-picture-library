@@ -1,4 +1,4 @@
-import { FILE_EXT } from "./constants";
+import { FILE_EXT, VIDEO_EXT } from "./constants";
 
 export const getPngFunc = (path) => {
     return new Promise((resolve) => {
@@ -22,4 +22,8 @@ export const getPngFunc = (path) => {
 
 export const isPicture = (name)=> {
     return !name?.startsWith('.') && FILE_EXT.some((ext) => name?.endsWith(ext));
+}
+
+export const isVideo = (name) => {
+    return !name?.startsWith('.') && VIDEO_EXT.some((ext) => name?.endsWith(ext));
 }

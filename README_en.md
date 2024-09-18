@@ -32,6 +32,12 @@ Tips:
 3. Support right-click on the image, copy the URL and block of the image, and paste it into the document for use
 
 ## Changelog
++ v0.5.0
+  - Support video in grid mode.
+  - Click to preview video in right side.
+  - Support video files extensions in .mp4, .ogg, .webm
+  - Fix style bugs.
+
 + v0.4.0
   - Support v3.0.17
   - Hide pictures starts with dot.
