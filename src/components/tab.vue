@@ -57,14 +57,17 @@
                     <div class="image-slot" @click="() => sm(f)">{{ _('loadFailed') }}</div>
                 </template>
             </el-image>
-            <div class="video-preview" :key="f"  v-for="(f, $i) in videoUrls"  v-on:click="() => onClickVideo(f)">
+            <div class="video-preview" @contextmenu="onContextClick(f, $event)" :key="f" v-for="(f, $i) in videoUrls"
+                v-on:click="() => onClickVideo(f)">
                 <video :src="f" class="sppl-video" :style="gridStyle"></video>
                 <div class="play-icon" style="">
-                    <svg><use xlink:href="#iconPlay"></use></svg>
+                    <svg>
+                        <use xlink:href="#iconPlay"></use>
+                    </svg>
                 </div>
             </div>
-            
-            
+
+
         </div>
         <div class="manga-wall" v-if="setting.mode === 'manga'">
             <el-image :key="f" v-for="(f, $i) in images" class="sppl-manga" :style="mangaStyle" :src="f" fit="cover"
@@ -86,7 +89,7 @@ import { getFiles } from '../storage/file';
 import { showMessage, Menu, confirm, openTab } from 'siyuan';
 import { FILE_EXT } from '../util/constants';
 import { _ } from '../util/i18n';
-import { getPngFunc } from '../util/image';
+import { getPngFunc, isPicture } from '../util/image';
 
 // @ts-ignore
 const { path } = inject('folder');
@@ -113,10 +116,7 @@ const setting = ref(plugin.setting);
 watch(setting.value, () => plugin.saveSetting(setting.value));
 
 const total = computed(() => {
-    if (setting.mode === 'grid') {
-        return videos.value.length + images.value.length;
-    }
-    return images.value.length;
+    return videoUrls.value.length + images.value.length;
 })
 
 const sortedFiles = computed(() => {
@@ -358,26 +358,40 @@ const deleteFileConfirm = (path) => {
 
 const onContextClick = (f, e) => {
     const m = new Menu('sppl-menu');
-    m.addItem({
-        label: decodeURI(f.split('/').pop()),
-        icon: 'iconImage',
-    });
-    m.addSeparator();
-    m.addItem({
-        label: _('copyPath'),
-        icon: 'iconCopy',
-        click: () => copyUrl(f),
-    })
-    m.addItem({
-        label: _('copyImageBlock'),
-        icon: 'iconCopy',
-        click: () => copyImageBlock(f),
-    })
-    m.addItem({
-        label: _('copyAsPng'),
-        icon: 'iconCopy',
-        click: () => copyAsPng(f),
-    })
+    if (isPicture(f)) {
+        m.addItem({
+            label: decodeURI(f.split('/').pop()),
+            icon: 'iconImage',
+        });
+        m.addSeparator();
+        m.addItem({
+            label: _('copyPath'),
+            icon: 'iconCopy',
+            click: () => copyUrl(f),
+        })
+        m.addItem({
+            label: _('copyImageBlock'),
+            icon: 'iconCopy',
+            click: () => copyImageBlock(f),
+        })
+        m.addItem({
+            label: _('copyAsPng'),
+            icon: 'iconCopy',
+            click: () => copyAsPng(f),
+        })
+
+    } else {
+        m.addItem({
+            label: decodeURI(f.split('/').pop()),
+            icon: 'iconVideo',
+        });
+        m.addSeparator();
+        m.addItem({
+            label: _('copyPath'),
+            icon: 'iconCopy',
+            click: () => copyUrl(f),
+        })
+    }
     m.addSeparator();
     m.addItem({
         label: _('deleteFile'),
@@ -435,7 +449,7 @@ html[data-theme-mode='light'] .tab-setting {
     position: absolute;
     right: 16px;
     bottom: 16px;
-    background-color: rgba(0,0,0,.5);
+    background-color: rgba(0, 0, 0, .5);
     padding: 4px;
     border-radius: 4px;
     font-size: 12px;
