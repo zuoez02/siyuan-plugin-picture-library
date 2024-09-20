@@ -39,6 +39,7 @@
     "contain": "contain",
     "cover": "cover",
     "uploadImage": "Upload images",
-    "overwrite": "Overwrite same name file"
-
+    "overwrite": "Overwrite same name file",
+    "showVideo": "Show videos",
+    "showImage": "Show images"
 }

@@ -31,6 +31,14 @@
                 <span>{{ _('overwrite') }}</span>
             </div>
             <div class="tab-setting-item">
+                <input type="checkbox" class="b3-button" v-model="setting.showImage">
+                <span>{{ _('showImage') }}</span>
+            </div>
+            <div class="tab-setting-item">
+                <input type="checkbox" class="b3-button" v-model="setting.showVideo">
+                <span>{{ _('showVideo') }}</span>
+            </div>
+            <div class="tab-setting-item">
                 <button class="b3-button" @click="onUpload">{{ _('uploadImage')
                     }}</button>
                 <input ref="uploadFile" type="file" name="uploadFile" id="uploadFile" multiple style="display: none;">
@@ -50,14 +58,14 @@
             </div>
         </div>
         <div class="image-wall" v-if="setting.mode === 'grid'">
-            <el-image :key="f" v-for="(f, $i) in images" class="sppl-image" :style="gridStyle" :src="f" fit="cover"
+            <el-image v-if="setting.showImage" :key="f" v-for="(f, $i) in images" class="sppl-image" :style="gridStyle" :src="f" fit="cover"
                 @contextmenu="onContextClick(f, $event)" :initial-index="$i" :preview-src-list="images" :lazy="true"
                 loading="lazy">
                 <template #error>
                     <div class="image-slot" @click="() => sm(f)">{{ _('loadFailed') }}</div>
                 </template>
             </el-image>
-            <div class="video-preview" @contextmenu="onContextClick(f, $event)" :key="f" v-for="(f, $i) in videoUrls"
+            <div v-if="setting.showVideo" class="video-preview" @contextmenu="onContextClick(f, $event)" :key="f" v-for="(f, $i) in videoUrls"
                 v-on:click="() => onClickVideo(f)">
                 <video :src="f" class="sppl-video" :style="gridStyle"></video>
                 <div class="play-icon" style="">
@@ -69,7 +77,7 @@
 
 
         </div>
-        <div class="manga-wall" v-if="setting.mode === 'manga'">
+        <div class="manga-wall" v-if="setting.showImage && setting.mode === 'manga'">
             <el-image :key="f" v-for="(f, $i) in images" class="sppl-manga" :style="mangaStyle" :src="f" fit="cover"
                 @contextmenu="onContextClick(f, $event)" :initial-index="$i" :preview-src-list="images" :lazy="true"
                 loading="lazy">
@@ -97,18 +105,18 @@ const plugin = inject('plugin');
 
 const showDropHover = ref(false);
 
-const files = ref([]);
+const imageFiles = ref([]);
 
-const videos = ref([]);
+const videoFiles = ref([]);
 
 const uploadFile = ref(null);
 
 const images = computed(() => {
-    return sortedFiles.value.map(l => l.url);
+    return sortedImageFiles.value.map(l => l.url);
 })
 
 const videoUrls = computed(() => {
-    return videos.value.map(l => l.url);
+    return sortedVideoFiles.value.map(l => l.url);
 })
 
 const setting = ref(plugin.setting);
@@ -116,21 +124,36 @@ const setting = ref(plugin.setting);
 watch(setting.value, () => plugin.saveSetting(setting.value));
 
 const total = computed(() => {
-    return videoUrls.value.length + images.value.length;
+    return (setting.value.showVideo ? videoUrls.value.length : 0)
+     + (setting.value.showImage ? images.value.length : 0);
 })
 
-const sortedFiles = computed(() => {
+const sortedImageFiles = computed(() => {
     const sort = setting.value.sort;
     if (sort === 'nameIncrease') {
-        return files.value.sort((a, b) => compare(a.name, b.name));
+        return imageFiles.value.sort((a, b) => compare(a.name, b.name));
     }
     if (sort === 'nameDecrease') {
-        return files.value.sort((a, b) => compare(b.name, a.name));
+        return imageFiles.value.sort((a, b) => compare(b.name, a.name));
     }
     if (sort === 'dateIncrease') {
-        return files.value.sort((a, b) => compare(a.updated, b.updated));
+        return imageFiles.value.sort((a, b) => compare(a.updated, b.updated));
     }
-    return files.value.sort((a, b) => compare(b.updated, a.updated));
+    return imageFiles.value.sort((a, b) => compare(b.updated, a.updated));
+})
+
+const sortedVideoFiles = computed(() => {
+    const sort = setting.value.sort;
+    if (sort === 'nameIncrease') {
+        return videoFiles.value.sort((a, b) => compare(a.name, b.name));
+    }
+    if (sort === 'nameDecrease') {
+        return videoFiles.value.sort((a, b) => compare(b.name, a.name));
+    }
+    if (sort === 'dateIncrease') {
+        return videoFiles.value.sort((a, b) => compare(a.updated, b.updated));
+    }
+    return videoFiles.value.sort((a, b) => compare(b.updated, a.updated));
 })
 
 const compare = (a, b) => {
@@ -166,7 +189,7 @@ const onPaste = async () => {
         // @ts-ignore
         const id = window.Lute.NewNodeID();
         await plugin.storage.addFileBlob(path, blob, `${id}.png`);
-        getImages();
+        getImagesAndVideos();
     } catch (e) {
         try {
             // @ts-ignore
@@ -194,7 +217,7 @@ const onPaste = async () => {
             // @ts-ignore
             const id = window.Lute.NewNodeID();
             await plugin.storage.addFileBlob(path, blob, `${id}.png`);
-            getImages();
+            getImagesAndVideos();
         } catch (e) {
             console.error(e);
             showMessage(_('onPasteError'));
@@ -222,10 +245,10 @@ const onClickVideo = (f) => {
     })
 }
 
-const refresh = () => getImages();
+const refresh = () => getImagesAndVideos();
 
 onMounted(() => {
-    getImages();
+    getImagesAndVideos();
     uploadFile.value.addEventListener('change', async function () {
         await plugin.storage.addFiles(path, Array.from(this.files).map((file) => {
             let name = file.name;
@@ -235,17 +258,17 @@ onMounted(() => {
             }
             return { file, name };
         }));
-        getImages();
+        getImagesAndVideos();
     })
 })
 
-const getImages = () => {
+const getImagesAndVideos = () => {
     // getFiles(path).then((list) => {
     //     files.value = list.filter(l => isPicture(l.name));
     // });
     return getFiles(path).then(list => {
-        files.value = list.filter(l => l.isPicture);
-        videos.value = list.filter(l => l.isVideo);
+        imageFiles.value = list.filter(l => l.isPicture);
+        videoFiles.value = list.filter(l => l.isVideo);
     })
 }
 
@@ -304,7 +327,6 @@ const onDragOver = (e) => {
 const onDrop = async (e) => {
     e.preventDefault();
     const d = e.dataTransfer?.files;
-    console.log(d);
     if (d && d.length > 0) {
         const files = Array.from(d).map((file) => {
             let name = file.name;
@@ -315,12 +337,12 @@ const onDrop = async (e) => {
             return { file, name };
         })
         await plugin.storage.addFiles(path, files);
-        getImages();
+        getImagesAndVideos();
     } else {
         const uri = e.dataTransfer?.getData('text/uri-list');
         if (uri) {
             await downloadUri(uri, path);
-            getImages();
+            getImagesAndVideos();
         }
     }
     closeHover(e);
@@ -352,7 +374,7 @@ const copyAsPng = async (path) => {
 const deleteFileConfirm = (path) => {
     confirm('⚠️' + _('deleteConfirm'), _('deleteConfirmText'), async () => {
         await plugin.storage.deleteFile('/data/' + decodeURI(path));
-        getImages();
+        getImagesAndVideos();
     });
 }
 

@@ -29,7 +29,9 @@ export default class PictureLibraryPlugin extends Plugin {
     mode: 'grid',
     overwrite: false,
     sort: 'nameIncrease',
-    sorts: ['nameIncrease', 'nameDescrease', 'dateIncrease', 'dateDecreases']
+    sorts: ['nameIncrease', 'nameDescrease', 'dateIncrease', 'dateDecreases'],
+    showImage: true,
+    showVideo: true,
   }
 
   onload() {
