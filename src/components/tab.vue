@@ -58,17 +58,20 @@
             </div>
         </div>
         <div class="image-wall" v-if="setting.mode === 'grid'">
-            <el-image v-if="setting.showImage" :key="f" v-for="(f, $i) in images" class="sppl-image" :style="gridStyle" :src="f" fit="cover"
-                @contextmenu="onContextClick(f, $event)" :initial-index="$i" :preview-src-list="images" :lazy="true"
-                loading="lazy">
+            <el-image v-if="setting.showImage" :key="f" v-for="(f, $i) in images" class="sppl-image" :style="gridStyle"
+                :src="f" fit="cover" @contextmenu="onContextClick(f, $event)" :initial-index="$i"
+                :preview-src-list="images" :lazy="true" loading="lazy">
                 <template #error>
-                    <div class="image-slot" @click="() => sm(f)">{{ _('loadFailed') }}</div>
+                    <div class="image-slot" @click="() => sm(f)" @contextmenu="onContextClick(f, $event)">{{
+        _('loadFailed') }}</div>
                 </template>
             </el-image>
-            <div v-if="setting.showVideo" class="video-preview" @contextmenu="onContextClick(f, $event)" :key="f" v-for="(f, $i) in videoUrls"
-                v-on:click="() => onClickVideo(f)">
-                <video :src="f" class="sppl-video" :style="gridStyle"></video>
+            <div v-if="setting.showVideo" class="video-preview" @contextmenu="onContextClick(f, $event)" :key="f"
+                v-for="(f, $i) in videoUrls" v-on:click="() => onClickVideo(f)" :style="gridStyle">
+                <video :src="f" class="sppl-video" preload="metadata" loop muted playsinline
+                    :ref="(el) => prepareVideoEl(el)"></video>
                 <div class="play-icon" style="">
+                    <span class="sppl-duration" :ref="(el) => getVideo(el)"></span>
                     <svg>
                         <use xlink:href="#iconPlay"></use>
                     </svg>
@@ -82,7 +85,8 @@
                 @contextmenu="onContextClick(f, $event)" :initial-index="$i" :preview-src-list="images" :lazy="true"
                 loading="lazy">
                 <template #error>
-                    <div class="image-slot" @click="() => sm(f)">{{ _('loadFailed') }}</div>
+                    <div class="image-slot" @click="() => sm(f)" @contextmenu="onContextClick(f, $event)">{{
+        _('loadFailed') }}</div>
                 </template>
             </el-image>
         </div>
@@ -125,8 +129,54 @@ watch(setting.value, () => plugin.saveSetting(setting.value));
 
 const total = computed(() => {
     return (setting.value.showVideo ? videoUrls.value.length : 0)
-     + (setting.value.showImage ? images.value.length : 0);
-})
+        + (setting.value.showImage ? images.value.length : 0);
+});
+
+const getVideo = (el) => {
+    if (!el || el.textContent.length > 0) {
+        return;
+    }
+    setTimeout(() => {
+        const videoElement = el.parentElement.parentElement.children[0];
+        return new Promise((resolve) => {
+            videoElement.onloadedmetadata = () => {
+                el.textContent = formatTime(videoElement.duration);
+                resolve(el);
+            }
+        })
+    }, 0);
+
+}
+
+const formatTime = (d) => {
+    if (isNaN(d)) {
+        return '';
+    }
+    let second = Math.floor(d);
+    let minute = 0;
+    let hour = 0;
+    if (second > 60) {
+        minute = Math.floor(second / 60);
+        second = second - minute * 60;
+        if (minute > 60) {
+            hour = Math.floor(minute / 60);
+            minute = minute - hour * 60;
+        }
+        let time = '';
+        time += (second)
+        if (minute != 0) {
+            time = minute + ':' + time
+        }
+        if (hour > 0) {
+            time = hour + ':' + String(minute).padStart(2, '0') + ':' + String(second).padStart(2, '0');
+        } else {
+            time = minute + ':' + String(second).padStart(2, '0');
+        }
+        return time;
+    } else {
+        return '0:' + second.toFixed(0).padStart(2, '0');
+    }
+}
 
 const sortedImageFiles = computed(() => {
     const sort = setting.value.sort;
@@ -233,6 +283,36 @@ const onShowInFloder = () => {
     shell.showItemInFolder(absPath);
 }
 
+const prepareVideoEl = (el) => {
+    if (!el) {
+        return;
+    }
+    el.removeEventListener('mouseover', onMouseOverVideo)
+    el.removeEventListener('mouseleave', onMouseLeaveVideo)
+    el.addEventListener('mouseover', onMouseOverVideo)
+    el.addEventListener('mouseleave', onMouseLeaveVideo)
+}
+
+const onMouseOverVideo = (e) => {
+    const video = e.target;
+    if (!video) {
+        return;
+    }
+    video.play()
+}
+
+const onMouseLeaveVideo = (e) => {
+    const video = e.target;
+    if (!video) {
+        return;
+    }
+    if (video.timer) {
+        clearTimeout(video.timer);
+        return;
+    }
+    video.pause();
+}
+
 const onClickVideo = (f) => {
     openTab({
         app: window.siyuan.ws.app,
@@ -242,6 +322,22 @@ const onClickVideo = (f) => {
         position: 'right',
         keepCursor: false,
         removeCurrentTab: true,
+    }).then((tab) => {
+        const videoEl = tab.panelElement.querySelector('video');
+        if (!videoEl) {
+            return;
+        }
+        if (videoEl.readyState) {
+            if (!videoEl.paused) {
+                videoEl.pause();
+            } else {
+                videoEl.play();
+            }
+            return;
+        }
+        videoEl.oncanplay = () => {
+            videoEl.play();
+        };
     })
 }
 
@@ -269,7 +365,7 @@ const getImagesAndVideos = () => {
     return getFiles(path).then(list => {
         imageFiles.value = list.filter(l => l.isPicture);
         videoFiles.value = list.filter(l => l.isVideo);
-    })
+    });
 }
 
 
@@ -426,7 +522,7 @@ const onContextClick = (f, e) => {
 
 // const plugin = inject('plugin');
 </script>
-<style scoped>
+<style>
 .tab-setting {
     display: block;
     border-bottom: 1px solid var(--b3-theme-background-light);
@@ -457,11 +553,13 @@ html[data-theme-mode='light'] .tab-setting {
 .sppl-video {
     cursor: pointer;
     display: inline-block;
-    margin: 6px;
     object-fit: cover;
+    width: 100%;
+    height: 100%;
 }
 
 .video-preview {
+    margin: 6px;
     position: relative;
     display: inline-block;
     cursor: pointer;
@@ -469,14 +567,13 @@ html[data-theme-mode='light'] .tab-setting {
 
 .video-preview .play-icon {
     position: absolute;
-    right: 16px;
-    bottom: 16px;
+    right: 8px;
+    bottom: 8px;
     background-color: rgba(0, 0, 0, .5);
     padding: 4px;
     border-radius: 4px;
     font-size: 12px;
     height: 12px;
-    width: 12px;
 }
 
 .video-preview .play-icon svg {
@@ -547,5 +644,14 @@ html[data-theme-mode='light'] .tab-setting {
     pointer-events: none;
     position: sticky;
     top: 45vh;
+}
+
+.sppl-duration {
+    line-height: 12px;
+    font-size: 12px;
+    margin-right: 4px;
+    display: inline-block;
+    position: relative;
+    top: -1px;
 }
 </style>

@@ -24,13 +24,13 @@
     "element-plus": "^2.3.9",
     "lodash": "^4.17.21",
     "prettier": "^2.8.8",
-    "siyuan": "^0.7.9",
+    "siyuan": "^1.0.2",
     "siyuan-package-custom-block": "^1.0.2",
     "sy-plugin-changelog": "^0.0.7",
     "typescript": "^5.1.6",
     "unplugin-auto-import": "^0.16.6",
     "unplugin-vue-components": "^0.25.1",
-    "vue": "^3.3.4"
+    "vue": "^3.5.7"
   },
   "scripts": {
     "make-link": "New-Item -ItemType SymbolicLink -Path \"siyuan-plugin-picture-library\" -Target \"E:\\github\\siyuan-plugin-picture-library\\\"",

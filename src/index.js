@@ -45,6 +45,12 @@ export default class PictureLibraryPlugin extends Plugin {
     // support custom block edit
     this.addPluginBlockMenu();
 
+    try {
+      require('@electron/remote').app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+    } catch {
+      console.warn("not allow in electron")
+    }
+
     // support custom block
     this.eventBus.on("ws-main", updateRenderer);
 

@@ -6,3 +6,20 @@
 div[custom-plugin-id="siyuan-plugin-picture-library"] > .protyle-icons {
     display: none;
 }
+
+.fn__flex-1:has(> .asset > video) {
+    display: flex;
+    background: black;
+  }
+  .fn__flex-1:has(> .asset > video) > .asset {
+    flex: 1;
+    text-align: center;
+    overflow: hidden;
+  margin: 0;
+  }
+  .fn__flex-1:has(> .asset > video) > .asset > video {
+    max-height: 100%;
+    max-width: 100%;
+    height: 100%;
+    width: auto;
+  }

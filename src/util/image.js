@@ -21,9 +21,9 @@ export const getPngFunc = (path) => {
 }
 
 export const isPicture = (name)=> {
-    return !name?.startsWith('.') && FILE_EXT.some((ext) => name?.endsWith(ext));
+    return !name?.startsWith('.') && FILE_EXT.some((ext) => name?.toLowerCase().endsWith(ext));
 }
 
 export const isVideo = (name) => {
-    return !name?.startsWith('.') && VIDEO_EXT.some((ext) => name?.endsWith(ext));
+    return !name?.startsWith('.') && VIDEO_EXT.some((ext) => name?.toLowerCase().endsWith(ext));
 }
