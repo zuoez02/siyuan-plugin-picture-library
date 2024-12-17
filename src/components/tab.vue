@@ -48,6 +48,10 @@
                     }}</button>
             </div>
             <div class="tab-setting-item">
+                <button class="b3-button" @click="toggleClipboardWatch">{{ !timerAutoClipboard ? _('toggleClipboardWatchOn') : _('toggleClipboardWatchOff')
+                    }}</button>
+            </div>
+            <div class="tab-setting-item">
                 <button class="b3-button" @click="onShowInFloder">{{ _('showInFolder') }}</button>
             </div>
             <div class="tab-setting-item">
@@ -57,17 +61,19 @@
                 <span>共 {{ total }} 个</span>
             </div>
         </div>
+        <div v-if="!firstLoading">{{  _('loading')  }}</div>
         <div class="image-wall" v-if="setting.mode === 'grid'">
-            <el-image v-if="setting.showImage" :key="f" v-for="(f, $i) in images" class="sppl-image" :style="gridStyle"
+            <View v-if="setting.showImage" :key="f" v-for="(f, $i) in infiniteImages" class="sppl-image" :class="gridClass"
+                :hide-on-click-modal="true"
                 :src="f" fit="cover" @contextmenu="onContextClick(f, $event)" :initial-index="$i"
-                :preview-src-list="images" :lazy="true" loading="lazy">
+                :preview-src-list="images" loading="lazy" decoding="async">
                 <template #error>
                     <div class="image-slot" @click="() => sm(f)" @contextmenu="onContextClick(f, $event)">{{
         _('loadFailed') }}</div>
                 </template>
-            </el-image>
-            <div v-if="setting.showVideo" class="video-preview" @contextmenu="onContextClick(f, $event)" :key="f"
-                v-for="(f, $i) in videoUrls" v-on:click="() => onClickVideo(f)" :style="gridStyle">
+            </View>
+            <div v-if="setting.showVideo && infiniteImages.length === images.length" class="video-preview" @contextmenu="onContextClick(f, $event)" :key="f"
+                v-for="(f, $i) in videoUrls" v-on:click="() => onClickVideo(f)" :class="gridClass">
                 <video :src="f" class="sppl-video" preload="metadata" loop muted playsinline
                     :ref="(el) => prepareVideoEl(el)"></video>
                 <div class="play-icon" style="">
@@ -77,11 +83,12 @@
                     </svg>
                 </div>
             </div>
-
+            <InfiniteLoading @infinite="onInfiniteLoad" v-show="infiniteImages.length !== images.length" />
 
         </div>
         <div class="manga-wall" v-if="setting.showImage && setting.mode === 'manga'">
             <el-image :key="f" v-for="(f, $i) in images" class="sppl-manga" :style="mangaStyle" :src="f" fit="cover"
+                :hide-on-click-modal="true"
                 @contextmenu="onContextClick(f, $event)" :initial-index="$i" :preview-src-list="images" :lazy="true"
                 loading="lazy">
                 <template #error>
@@ -96,12 +103,15 @@
     </div>
 </template>
 <script setup>
-import { computed, inject, onMounted, ref, watch } from 'vue';
+import { computed, inject, onErrorCaptured, onMounted, onUnmounted, ref, watch } from 'vue';
 import { getFiles } from '../storage/file';
 import { showMessage, Menu, confirm, openTab } from 'siyuan';
 import { FILE_EXT } from '../util/constants';
 import { _ } from '../util/i18n';
 import { getPngFunc, isPicture } from '../util/image';
+import InfiniteLoading from "v3-infinite-loading";
+import "v3-infinite-loading/lib/style.css";
+import View from './view.vue';
 
 // @ts-ignore
 const { path } = inject('folder');
@@ -109,15 +119,25 @@ const plugin = inject('plugin');
 
 const showDropHover = ref(false);
 
+const firstLoading = ref(false);
+
 const imageFiles = ref([]);
 
 const videoFiles = ref([]);
 
 const uploadFile = ref(null);
 
+const page = ref(1);
+
+const pageSize = 40;
+
+const infiniteTriggered = ref(false);
+
 const images = computed(() => {
     return sortedImageFiles.value.map(l => l.url);
-})
+});
+
+const infiniteImages = computed(() => images.value.slice(0, page.value * pageSize))
 
 const videoUrls = computed(() => {
     return sortedVideoFiles.value.map(l => l.url);
@@ -131,6 +151,11 @@ const total = computed(() => {
     return (setting.value.showVideo ? videoUrls.value.length : 0)
         + (setting.value.showImage ? images.value.length : 0);
 });
+
+const onInfiniteLoad = (e) => {
+    page.value++;
+    infiniteTriggered.value = true;
+}
 
 const getVideo = (el) => {
     if (!el || el.textContent.length > 0) {
@@ -216,10 +241,7 @@ const compare = (a, b) => {
     return 0;
 }
 
-const gridStyle = computed(() => ({
-    width: `${setting.value.size}px`,
-    height: `${setting.value.size}px`,
-}));
+const gridClass = computed(() => 'size_' + setting.value.size)
 
 const mangaStyle = computed(() => ({
     width: `${setting.value.mangaSize}`,
@@ -317,7 +339,7 @@ const onClickVideo = (f) => {
     openTab({
         app: window.siyuan.ws.app,
         asset: {
-            path: f.slice(1),
+            path: f.slice(1).replace('.MP4', '.mp4'),
         },
         position: 'right',
         keepCursor: false,
@@ -358,13 +380,22 @@ onMounted(() => {
     })
 })
 
+onUnmounted(() => {
+    if (timerAutoClipboard.value) {
+        clearInterval(timerAutoClipboard.value);
+    }
+})
+
 const getImagesAndVideos = () => {
     // getFiles(path).then((list) => {
     //     files.value = list.filter(l => isPicture(l.name));
     // });
     return getFiles(path).then(list => {
+        page.value = 1;
+        infiniteTriggered.value = false;
         imageFiles.value = list.filter(l => l.isPicture);
         videoFiles.value = list.filter(l => l.isVideo);
+        firstLoading.value = true;
     });
 }
 
@@ -475,6 +506,7 @@ const deleteFileConfirm = (path) => {
 }
 
 const onContextClick = (f, e) => {
+    console.log(f, e);
     const m = new Menu('sppl-menu');
     if (isPicture(f)) {
         m.addItem({
@@ -497,7 +529,6 @@ const onContextClick = (f, e) => {
             icon: 'iconCopy',
             click: () => copyAsPng(f),
         })
-
     } else {
         m.addItem({
             label: decodeURI(f.split('/').pop()),
@@ -517,8 +548,44 @@ const onContextClick = (f, e) => {
         click: () => deleteFileConfirm(f),
     });
     m.open({ x: e.pageX, y: e.pageY });
+    console.log(m);
 }
 
+
+// watch clipboard
+const timerAutoClipboard = ref(null);
+
+let timerImage = '';
+
+let initImage = false;
+
+const toggleClipboardWatch = () => {
+    if (timerAutoClipboard.value) {
+        clearInterval(timerAutoClipboard.value);
+        timerAutoClipboard.value = null;
+        timerImage = '';
+        initImage = false;
+        return;
+    }
+    timerAutoClipboard.value = setInterval(() => {
+        // @ts-ignore
+        const { clipboard } = window.require('electron');
+        const image = clipboard.readImage('clipboard');
+        if (!image) {
+            initImage = true;
+            return;
+        }
+        const imageUrl = image.toDataURL();
+        if (timerImage !== imageUrl) {
+            timerImage = imageUrl;
+            if (!initImage) {
+                initImage = true;
+            } else {
+                onPaste();
+            }
+        }
+    }, 500)
+}
 
 // const plugin = inject('plugin');
 </script>
@@ -563,6 +630,7 @@ html[data-theme-mode='light'] .tab-setting {
     position: relative;
     display: inline-block;
     cursor: pointer;
+    vertical-align: top;
 }
 
 .video-preview .play-icon {
@@ -653,5 +721,34 @@ html[data-theme-mode='light'] .tab-setting {
     display: inline-block;
     position: relative;
     top: -1px;
+}
+
+.size_100 {
+    width: 100px;
+    height: 100px;
+}
+.size_200 {
+    width: 200px;
+    height: 200px;
+}
+.size_400 {
+    width: 400px;
+    height: 400px;
+}
+.size_600 {
+    width: 600px;
+    height: 600px;
+}
+.size_800 {
+    width: 800px;
+    height: 800px;
+}
+.size_1000 {
+    width: 1000px;
+    height: 1000px;
+}
+.size_1200 {
+    width: 1200px;
+    height: 1200px;
 }
 </style>

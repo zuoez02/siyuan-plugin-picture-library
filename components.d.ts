@@ -16,5 +16,6 @@ declare module 'vue' {
     FileDialog: typeof import('./src/components/file-dialog.vue')['default']
     Filetree: typeof import('./src/components/filetree.vue')['default']
     Tab: typeof import('./src/components/tab.vue')['default']
+    View: typeof import('./src/components/view.vue')['default']
   }
 }

@@ -41,5 +41,8 @@
     "uploadImage": "Upload images",
     "overwrite": "Overwrite same name file",
     "showVideo": "Show videos",
-    "showImage": "Show images"
+    "showImage": "Show images",
+    "loading": "Loading...",
+    "toggleClipboardWatchOn": "Open auto paste",
+    "toggleClipboardWatchOff": "Stop auto paste"
 }

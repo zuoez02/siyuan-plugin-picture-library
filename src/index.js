@@ -63,6 +63,10 @@ export default class PictureLibraryPlugin extends Plugin {
         tab.provide('plugin', plugin);
         tab.provide('folder', this.data);
         tab.mount(this.element);
+        this.tab.app = tab;
+      },
+      beforeDestroy() {
+        this.tab.app?.unmount();
       }
     })
 

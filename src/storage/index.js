@@ -1,4 +1,5 @@
 import {
+    getFile,
     addFile,
     addFolder,
     removeFolder,
@@ -7,6 +8,8 @@ import {
 } from './file';
 import { reactive } from 'vue';
 import { FILE_EXT, VIDEO_EXT } from '../util/constants';
+import { MD5 } from '../util/md5';
+import lrz from 'lrz';
 
 export class Storage {
     folders = reactive([]);
@@ -73,12 +76,12 @@ export class Storage {
                 isRoot: false,
             });
             folder.folders.push(node);
-            
+
         }).then(() => this.plugin.saveFiles())
     }
 
     removeFolder(path, name) {
-        const p =  path.split('/');
+        const p = path.split('/');
         p.pop();
         const np = p.join('/')
         const folder = this.getFolderByPath(this.folders, np);
@@ -134,4 +137,29 @@ export class Storage {
     async deleteFile(p) {
         return removeFile(p);
     }
+
+    async getHash(p) {
+        return MD5(p);
+    }
+
+    async getCacheOfPicture(p) {
+        const md5 = await this.getHash(p);
+        const res = await getFile('/data/storage/petal/siyuan-plugin-picture-library/.cache/' + md5)
+        if (typeof res === 'string') {
+            return res;
+        }
+        const code = res.code;
+        if (code === 404) {
+            const img = await lrz(p)
+                .then(function (rst) {
+                    return rst.base64;
+                })
+            await addFile('/data/storage/petal/siyuan-plugin-picture-library/.cache/' + md5, new Blob([img]))
+            return img;
+        } else {
+            console.log(res);
+            return res;
+        }
+    }
 }
+

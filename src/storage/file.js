@@ -1,5 +1,17 @@
 import { isPicture, isVideo } from "../util/image";
 
+export const getFile = (f) => {
+    return fetch('/api/file/getFile', { method: 'POST', body: JSON.stringify({ path: f })}).then((res) => {
+        return res.text();
+    }).then((res) => {
+        try {
+            return JSON.parse(res);
+        } catch {
+            return res;
+        }
+    })
+}
+
 export const addFile = (f, file) => {
     const fd = new FormData();
     fd.append('path', f);

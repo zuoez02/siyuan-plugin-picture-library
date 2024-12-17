@@ -41,5 +41,8 @@
     "uploadImage": "上传图片",
     "overwrite": "覆盖同名文件",
     "showVideo": "显示视频文件",
-    "showImage": "显示图片文件"
+    "showImage": "显示图片文件",
+    "loading": "加载中...",
+    "toggleClipboardWatchOn": "开启自动粘贴",
+    "toggleClipboardWatchOff": "关闭自动粘贴"
 }
