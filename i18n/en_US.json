@@ -8,7 +8,7 @@
     "refresh": "Refresh",
     "mangaSize": "Manga Width",
     "manga": "Manga",
-    "grid": "square",
+    "grid": "Grid",
     "min": "Minimize",
     "nameIncrease": "Name Increment",
     "nameDescrease": "Name Decrease",
@@ -44,5 +44,14 @@
     "showImage": "Show images",
     "loading": "Loading...",
     "toggleClipboardWatchOn": "Open auto paste",
-    "toggleClipboardWatchOff": "Stop auto paste"
+    "toggleClipboardWatchOff": "Stop auto paste",
+    "ratio": "Ratio",
+    "ratioSize": "Base Size",
+    "ratio_1:1": "Square (1:1)",
+    "ratio_2:3": "Portrait (2:3)",
+    "ratio_3:2": "Landscape (3:2)",
+    "ratio_3:4": "Portrait (3:4)",
+    "ratio_4:3": "Landscape (4:3)",
+    "ratio_9:16": "Portrait (9:16)",
+    "ratio_16:9": "Landscape (16:9)"
 }
