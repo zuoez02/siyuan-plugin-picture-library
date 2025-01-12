@@ -44,5 +44,13 @@
     "showImage": "显示图片文件",
     "loading": "加载中...",
     "toggleClipboardWatchOn": "开启自动粘贴",
-    "toggleClipboardWatchOff": "关闭自动粘贴"
+    "toggleClipboardWatchOff": "关闭自动粘贴",
+    "ratio": "按比例",
+    "ratioSize": "基准尺寸",
+    "ratio_2:3": "竖版 (2:3)",
+    "ratio_3:2": "横版 (3:2)",
+    "ratio_3:4": "竖版 (3:4)",
+    "ratio_4:3": "横版 (4:3)",
+    "ratio_9:16": "竖版 (9:16)",
+    "ratio_16:9": "横版 (16:9)"
 }
