@@ -14,6 +14,18 @@
                     <option v-for="k in setting.sizes" :value="k">{{ k }}</option>
                 </select>
             </div>
+            <div class="tab-setting-item" v-if="setting.mode === 'ratio'">
+                <div class="b3-label__text">{{ _('ratio') }}</div>
+                <select class="b3-select" v-model="setting.ratio">
+                    <option v-for="k in setting.ratios" :value="k">{{ _('ratio_' + k) }}</option>
+                </select>
+            </div>
+            <div class="tab-setting-item" v-if="setting.mode === 'ratio'">
+                <div class="b3-label__text">{{ _('size') }}</div>
+                <select class="b3-select" v-model="setting.ratioSize">
+                    <option v-for="k in setting.ratioSizes" :value="k">{{ k }}</option>
+                </select>
+            </div>
             <div class="tab-setting-item" v-if="setting.mode === 'manga'">
                 <div class="b3-label__text">{{ _('mangaSize') }}</div>
                 <select class="b3-select" v-model="setting.mangaSize">
@@ -64,7 +76,8 @@
         <div v-if="!firstLoading">{{  _('loading')  }}</div>
         <div class="image-wall" v-if="setting.mode === 'grid'">
             <View v-if="setting.showImage" :key="f" v-for="(f, $i) in infiniteImages" class="sppl-image" :class="gridClass"
-                :hide-on-click-modal="true"
+                :hide-on-click-modal="false"
+                :preview-teleported="true"
                 :src="f" fit="cover" @contextmenu="onContextClick(f, $event)" :initial-index="$i"
                 :preview-src-list="images" loading="lazy" decoding="async">
                 <template #error>
@@ -84,7 +97,24 @@
                 </div>
             </div>
             <InfiniteLoading @infinite="onInfiniteLoad" v-show="infiniteImages.length !== images.length" />
-
+        </div>
+        <div class="image-wall" v-if="setting.mode === 'ratio'">
+            <View v-if="setting.showImage" :key="f" v-for="(f, $i) in infiniteImages" 
+                class="sppl-image" :style="ratioStyle"
+                :hide-on-click-modal="false"
+                :preview-teleported="true"
+                :initial-index="$i"
+                :src="f" fit="cover" @contextmenu="onContextClick(f, $event)" 
+                :preview-src-list="images" loading="lazy" decoding="async">
+                <template #error>
+                    <div class="image-slot" @click="() => sm(f)" 
+                        @contextmenu="onContextClick(f, $event)">
+                        {{ _('loadFailed') }}
+                    </div>
+                </template>
+            </View>
+            <InfiniteLoading @infinite="onInfiniteLoad" 
+                v-show="infiniteImages.length !== images.length" />
         </div>
         <div class="manga-wall" v-if="setting.showImage && setting.mode === 'manga'">
             <el-image :key="f" v-for="(f, $i) in images" class="sppl-manga" :style="mangaStyle" :src="f" fit="cover"
@@ -144,6 +174,13 @@ const videoUrls = computed(() => {
 })
 
 const setting = ref(plugin.setting);
+
+// 添加新的设置项
+setting.value.modes = ['grid', 'manga', 'ratio'];
+setting.value.ratios = ['1:1', '2:3', '3:2', '3:4', '4:3', '9:16', '16:9'];
+setting.value.ratioSizes = [50, 100, 150, 200, 250, 300];
+setting.value.ratio = setting.value.ratio || '3:4';
+setting.value.ratioSize = setting.value.ratioSize || 100;
 
 watch(setting.value, () => plugin.saveSetting(setting.value));
 
@@ -246,6 +283,16 @@ const gridClass = computed(() => 'size_' + setting.value.size)
 const mangaStyle = computed(() => ({
     width: `${setting.value.mangaSize}`,
 }));
+
+const ratioStyle = computed(() => {
+    const size = setting.value.ratioSize;
+    const [w, h] = setting.value.ratio.split(':').map(Number);
+    return {
+        width: `${size * w}px`,
+        height: `${size * h}px`,
+        objectFit: 'cover'
+    };
+});
 
 const onUpload = () => {
     uploadFile.value.click();
