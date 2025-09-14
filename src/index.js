@@ -38,8 +38,8 @@ export default class PictureLibraryPlugin extends Plugin {
     changelog(this);
     const plugin = this;
     setI18n(this.i18n);
-    registerIcon(ICON, "200", icon);
-    registerIcon(CAROUSEL, "200", carousel);
+    registerIcon(ICON, "200", icon, this);
+    registerIcon(CAROUSEL, "200", carousel, this);
     this.loadConfig();
 
     // support custom block edit

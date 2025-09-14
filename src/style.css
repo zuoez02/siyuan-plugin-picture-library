@@ -36,6 +36,7 @@ div[custom-plugin-id="siyuan-plugin-picture-library"] > .protyle-icons {
     flex-wrap: wrap;
     gap: 8px;
     padding: 8px;
+    flex-grow: unset;
 }
 
 .sppl-plugin-tab .image-wall .sppl-image {
