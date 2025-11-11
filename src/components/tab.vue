@@ -383,10 +383,47 @@ const onMouseLeaveVideo = (e) => {
 }
 
 const onClickVideo = (f) => {
+    const u = f.slice(1).replace('.MP4', '.mp4');
+    if (plugin.app.plugins.some(p => p.name === 'siyuan-media-player')) {
+        window.dispatchEvent(new CustomEvent('playMediaItem', { 
+            detail: {
+                url: u,          // 必需：媒体URL
+            }
+        }));
+        return;
+    }
+
+/** 
+// 播放控制
+player.toggle()                 // 播放/暂停
+player.pause()                  // 暂停
+player.resume()                 // 继续
+
+// 进度控制
+player.seekTo(60)              // 跳转到指定时间（秒）
+player.seek(10)                // 快进10秒 / seek(-10) 快退
+player.getCurrentTime()        // 获取当前时间 -> number
+
+// 速度控制
+player.increaseSpeed()         // 加速
+player.decreaseSpeed()         // 减速
+
+// 获取状态
+player.getCurrentMedia()       // 获取媒体信息 -> MediaItem
+player.isPlaying()            // 是否播放中 -> boolean
+
+// 功能操作
+player.triggerAction('screenshot')   // 截图
+player.triggerAction('timestamp')    // 创建时间戳
+player.triggerAction('loopSegment')  // 循环片段
+player.triggerAction('mediaNotes')   // 媒体笔记
+player.triggerAction('prev')         // 上一曲
+player.triggerAction('next')         // 下一曲
+*/
     openTab({
         app: window.siyuan.ws.app,
         asset: {
-            path: f.slice(1).replace('.MP4', '.mp4'),
+            path: u,
         },
         position: 'right',
         keepCursor: false,
