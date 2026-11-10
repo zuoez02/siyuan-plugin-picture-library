@@ -57,5 +57,8 @@
   "back": "Back",
   "close": "Close",
   "setting": "Settings",
-  "more": "More"
+  "more": "More",
+  "uploadUnsupported": "Unsupported file type. Allowed: %s",
+  "uploadSkipped": "Skipped %s unsupported file(s)",
+  "uploadFailed": "Upload failed: %s"
 }

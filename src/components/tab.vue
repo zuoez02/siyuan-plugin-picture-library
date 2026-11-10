@@ -53,7 +53,8 @@
             <div class="tab-setting-item">
                 <button class="b3-button" @click="onUpload">{{ _('uploadImage')
                     }}</button>
-                <input ref="uploadFile" type="file" name="uploadFile" id="uploadFile" multiple style="display: none;">
+                <input ref="uploadFile" type="file" name="uploadFile" id="uploadFile" multiple
+                    class="sppl-upload-input" accept="image/*,video/*">
             </div>
             <div class="tab-setting-item">
                 <button class="b3-button" @click="onPaste">{{ _('pasteImage')
@@ -138,7 +139,7 @@
 import { computed, inject, onErrorCaptured, onMounted, onUnmounted, ref, watch } from 'vue';
 import { getFiles } from '../storage/file';
 import { showMessage, Menu, confirm, openTab } from 'siyuan';
-import { FILE_EXT } from '../util/constants';
+import { FILE_EXT, VIDEO_EXT } from '../util/constants';
 import { _ } from '../util/i18n';
 import { getPngFunc, isPicture } from '../util/image';
 import InfiniteLoading from "v3-infinite-loading";
@@ -480,20 +481,77 @@ player.triggerAction('next')         // 下一曲
 
 const refresh = () => getImagesAndVideos();
 
-onMounted(() => {
-    getImagesAndVideos();
-    uploadFile.value.addEventListener('change', async function () {
-        await plugin.storage.addFiles(path, Array.from(this.files).map((file) => {
-            let name = file.name;
-            if (!setting.value.overwrite && images.value.some((i) => i.endsWith(file.name))) {
+const SUPPORTED_EXT = FILE_EXT.concat(VIDEO_EXT);
+
+// iOS 从相册选的视频可能叫 IMG_1234.MOV，甚至没有后缀，所以除了后缀再看 MIME
+const extOf = (name) => {
+    const lower = (name || '').toLowerCase();
+    const idx = lower.lastIndexOf('.');
+    return idx >= 0 ? lower.slice(idx) : '';
+};
+
+const isSupportedFile = (file) => {
+    const ext = extOf(file.name);
+    if (ext && SUPPORTED_EXT.includes(ext)) {
+        return true;
+    }
+    const type = (file.type || '').toLowerCase();
+    return type.startsWith('image/') || type.startsWith('video/');
+};
+
+// 没有后缀时按 MIME 补一个，否则写盘和预览都认不出来
+const normalizeName = (file) => {
+    const name = file.name || 'upload';
+    if (extOf(name)) {
+        return name;
+    }
+    const sub = ((file.type || '').split('/')[1] || 'bin').toLowerCase();
+    return `${name}.${sub === 'quicktime' ? 'mov' : sub}`;
+};
+
+const onFilesSelected = async (event) => {
+    const input = event.target;
+    const files = Array.from(input.files || []);
+    if (!files.length) {
+        return;
+    }
+    const accepted = files.filter(isSupportedFile);
+    const skipped = files.length - accepted.length;
+
+    if (!accepted.length) {
+        showMessage(_('uploadUnsupported').replace('%s', SUPPORTED_EXT.join(' ')));
+        input.value = '';
+        return;
+    }
+
+    try {
+        await plugin.storage.addFiles(path, accepted.map((file) => {
+            let name = normalizeName(file);
+            if (!setting.value.overwrite && images.value.some((i) => i.endsWith(name))) {
                 const id = window.Lute.NewNodeID();
-                name = id + '.' + name.split('.')[name.split('.').length - 1];
+                name = id + '.' + name.split('.').pop();
             }
             return { file, name };
         }));
-        getImagesAndVideos();
-    })
-})
+    } catch (e) {
+        console.error('sppl upload failed', e);
+        showMessage(_('uploadFailed').replace('%s', (e && e.message) || String(e)));
+        input.value = '';
+        return;
+    }
+
+    if (skipped > 0) {
+        showMessage(_('uploadSkipped').replace('%s', String(skipped)));
+    }
+    // 清空 value，否则连续选择同一个文件不会再触发 change
+    input.value = '';
+    getImagesAndVideos();
+};
+
+onMounted(() => {
+    getImagesAndVideos();
+    uploadFile.value.addEventListener('change', onFilesSelected);
+});
 
 onUnmounted(() => {
     if (timerAutoClipboard.value) {

@@ -57,5 +57,8 @@
   "back": "返回",
   "close": "关闭",
   "setting": "设置",
-  "more": "更多"
+  "more": "更多",
+  "uploadUnsupported": "不支持的文件类型，可上传：%s",
+  "uploadSkipped": "已跳过 %s 个不支持的文件",
+  "uploadFailed": "上传失败：%s"
 }
