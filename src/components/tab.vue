@@ -51,10 +51,11 @@
                 <span>{{ _('showVideo') }}</span>
             </div>
             <div class="tab-setting-item">
-                <button class="b3-button" @click="onUpload">{{ _('uploadImage')
-                    }}</button>
+                <!-- 用 label for 触发：iOS 对 JS click() 打开的文件选择器偶尔不传 change -->
+                <label class="b3-button sppl-upload-label" for="uploadFile">{{ _('uploadImage') }}</label>
                 <input ref="uploadFile" type="file" name="uploadFile" id="uploadFile" multiple
                     class="sppl-upload-input" accept="image/*,video/*">
+                <div class="sppl-upload-status" v-if="uploadStatus">{{ uploadStatus }}</div>
             </div>
             <div class="tab-setting-item">
                 <button class="b3-button" @click="onPaste">{{ _('pasteImage')
@@ -171,6 +172,7 @@ const imageFiles = ref([]);
 const videoFiles = ref([]);
 
 const uploadFile = ref(null);
+const uploadStatus = ref('');
 
 const page = ref(1);
 
@@ -313,7 +315,12 @@ const ratioStyle = computed(() => {
 });
 
 const onUpload = () => {
-    uploadFile.value.click();
+    uploadStatus.value = '打开文件选择器…';
+    try {
+        uploadFile.value.click();
+    } catch (e) {
+        uploadStatus.value = '打不开文件选择器：' + ((e && e.message) || e);
+    }
 }
 
 const onPaste = async () => {
@@ -509,41 +516,73 @@ const normalizeName = (file) => {
     return `${name}.${sub === 'quicktime' ? 'mov' : sub}`;
 };
 
+// 直接调 putFile 以便拿到 HTTP 状态：storage.addFiles 不检查响应，失败也是静默的
+const putFile = async (target, file) => {
+    const fd = new FormData();
+    fd.append('path', target);
+    fd.append('isDir', 'false');
+    fd.append('file', file);
+    const res = await fetch('/api/file/putFile', { method: 'POST', body: fd });
+    let body = null;
+    try {
+        body = await res.json();
+    } catch (e) {
+        // 空响应或非 JSON
+    }
+    return { status: res.status, ok: res.ok && (!body || body.code === 0), msg: (body && body.msg) || '' };
+};
+
 const onFilesSelected = async (event) => {
     const input = event.target;
     const files = Array.from(input.files || []);
     if (!files.length) {
+        uploadStatus.value = '没有拿到文件（选择可能被取消）';
         return;
     }
+
     const accepted = files.filter(isSupportedFile);
     const skipped = files.length - accepted.length;
+    uploadStatus.value = `已选择 ${files.length} 个，可上传 ${accepted.length} 个，目录 ${path}`;
 
     if (!accepted.length) {
-        showMessage(_('uploadUnsupported').replace('%s', SUPPORTED_EXT.join(' ')));
+        uploadStatus.value = `不支持的类型：${files.map((f) => f.name).join(', ')}`;
         input.value = '';
         return;
     }
 
-    try {
-        await plugin.storage.addFiles(path, accepted.map((file) => {
-            let name = normalizeName(file);
-            if (!setting.value.overwrite && images.value.some((i) => i.endsWith(name))) {
-                const id = window.Lute.NewNodeID();
-                name = id + '.' + name.split('.').pop();
+    let okCount = 0;
+    const errors = [];
+    for (let i = 0; i < accepted.length; i++) {
+        const file = accepted[i];
+        let name = normalizeName(file);
+        if (!setting.value.overwrite && images.value.some((item) => item.endsWith(name))) {
+            const id = window.Lute.NewNodeID();
+            name = id + '.' + name.split('.').pop();
+        }
+        const target = `${path}/${name}`;
+        uploadStatus.value = `上传中 ${i + 1}/${accepted.length}：${name}`;
+        try {
+            const result = await putFile(target, file);
+            if (result.ok) {
+                okCount++;
+            } else {
+                errors.push(`${name}: HTTP ${result.status} ${result.msg}`);
             }
-            return { file, name };
-        }));
-    } catch (e) {
-        console.error('sppl upload failed', e);
-        showMessage(_('uploadFailed').replace('%s', (e && e.message) || String(e)));
-        input.value = '';
-        return;
+        } catch (e) {
+            errors.push(`${name}: ${(e && e.message) || e}`);
+        }
     }
 
-    if (skipped > 0) {
-        showMessage(_('uploadSkipped').replace('%s', String(skipped)));
+    if (errors.length) {
+        uploadStatus.value = `成功 ${okCount}，失败 ${errors.length}：${errors[0]}`;
+        showMessage(_('uploadFailed').replace('%s', errors[0]));
+    } else {
+        uploadStatus.value = `上传完成 ${okCount} 个 → ${path}`;
+        if (skipped > 0) {
+            showMessage(_('uploadSkipped').replace('%s', String(skipped)));
+        }
     }
-    // 清空 value，否则连续选择同一个文件不会再触发 change
+
     input.value = '';
     getImagesAndVideos();
 };

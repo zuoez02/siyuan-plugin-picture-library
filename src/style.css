@@ -510,5 +510,17 @@ div[custom-plugin-id="siyuan-plugin-picture-library"] > .protyle-icons {
     height: 1px;
     opacity: 0;
     overflow: hidden;
-    pointer-events: none;
+}
+
+.sppl-upload-label {
+    display: inline-block;
+    cursor: pointer;
+}
+
+.sppl-upload-status {
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--b3-theme-on-surface);
+    word-break: break-all;
 }
