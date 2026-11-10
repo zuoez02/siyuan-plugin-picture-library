@@ -1,5 +1,5 @@
 <template>
-<div class="fn__flex-1 fn__flex-column sppl-dock">
+<div class="fn__flex-1 fn__flex-column sppl-dock" :class="{ 'sppl-dock--mobile': mobile }">
     <div class="block__icons">
         <div class="block__logo">
             <svg class="block__logoicon"><use xlink:href="#iconEmoji"></use></svg>
@@ -20,18 +20,20 @@ import Filetree from './filetree.vue';
 import { inject } from 'vue';
 import { createFolder } from '../util/dialog';
 import { _ } from '../util/i18n';
+import { isMobileFrontend } from '../util/mobile';
 
 const plugin = inject('plugin');
+const mobile = isMobileFrontend();
 const storage = plugin.storage;
 
 const add = () => {
     createFolder().then((v) => {
         storage.addRootFolder(v);
-    })
-}
+    });
+};
 
 const refresh = () => {
     storage.refresh();
-}
+};
 
 </script>

@@ -59,11 +59,11 @@
                 <button class="b3-button" @click="onPaste">{{ _('pasteImage')
                     }}</button>
             </div>
-            <div class="tab-setting-item">
+            <div class="tab-setting-item sppl-desktop-only">
                 <button class="b3-button" @click="toggleClipboardWatch">{{ !timerAutoClipboard ? _('toggleClipboardWatchOn') : _('toggleClipboardWatchOff')
                     }}</button>
             </div>
-            <div class="tab-setting-item">
+            <div class="tab-setting-item sppl-desktop-only">
                 <button class="b3-button" @click="onShowInFloder">{{ _('showInFolder') }}</button>
             </div>
             <div class="tab-setting-item">
@@ -87,7 +87,7 @@
             </View>
             <div v-if="setting.showVideo && infiniteImages.length === images.length" class="video-preview" @contextmenu="onContextClick(f, $event)" :key="f"
                 v-for="(f, $i) in videoUrls" v-on:click="() => onClickVideo(f)" :class="gridClass">
-                <video :src="f" class="sppl-video" preload="metadata" loop muted playsinline
+                <video :src="videoSrc(f)" class="sppl-video" preload="metadata" loop muted playsinline
                     :ref="(el) => prepareVideoEl(el)"></video>
                 <div class="play-icon" style="">
                     <span class="sppl-duration" :ref="(el) => getVideo(el)"></span>
@@ -119,7 +119,9 @@
         <div class="manga-wall" v-if="setting.showImage && setting.mode === 'manga'">
             <el-image :key="f" v-for="(f, $i) in images" class="sppl-manga" :style="mangaStyle" :src="f" fit="cover"
                 :hide-on-click-modal="true"
-                @contextmenu="onContextClick(f, $event)" :initial-index="$i" :preview-src-list="images" :lazy="true"
+                @contextmenu="onContextClick(f, $event)" :lazy="true"
+                v-bind="isMobile ? {} : { 'initial-index': $i, 'preview-src-list': images }"
+                @click="onMangaClick($i)"
                 loading="lazy">
                 <template #error>
                     <div class="image-slot" @click="() => sm(f)" @contextmenu="onContextClick(f, $event)">{{
@@ -142,10 +144,22 @@ import { getPngFunc, isPicture } from '../util/image';
 import InfiniteLoading from "v3-infinite-loading";
 import "v3-infinite-loading/lib/style.css";
 import View from './view.vue';
+import { isMobileFrontend } from '../util/mobile';
+import { openMobilePlayer } from '../util/mobile-player';
+import { openMobileImageViewer } from '../util/mobile-image-viewer';
 
 // @ts-ignore
 const { path } = inject('folder');
 const plugin = inject('plugin');
+
+const isMobile = isMobileFrontend();
+
+// 移动端用自建预览层（支持左右切换 / 上滑关闭 / 双指缩放）
+const onMangaClick = (i) => {
+    if (isMobile) {
+        openMobileImageViewer(images.value, i);
+    }
+};
 
 const showDropHover = ref(false);
 
@@ -193,6 +207,9 @@ const onInfiniteLoad = (e) => {
     page.value++;
     infiniteTriggered.value = true;
 }
+
+// iOS Safari 在只有 metadata 时不绘制首帧，media fragment 让它定位到 0.1s 出封面
+const videoSrc = (f) => `${f}#t=0.1`;
 
 const getVideo = (el) => {
     if (!el || el.textContent.length > 0) {
@@ -356,6 +373,11 @@ const prepareVideoEl = (el) => {
     if (!el) {
         return;
     }
+    // 移动端点一下就会触发 mouseover，预览视频会在后台一直播，禁掉
+    if (isMobileFrontend()) {
+        try { el.pause(); } catch (e) { /* ignore */ }
+        return;
+    }
     el.removeEventListener('mouseover', onMouseOverVideo)
     el.removeEventListener('mouseleave', onMouseLeaveVideo)
     el.addEventListener('mouseover', onMouseOverVideo)
@@ -383,13 +405,22 @@ const onMouseLeaveVideo = (e) => {
 }
 
 const onClickVideo = (f) => {
+    if (isMobileFrontend()) {
+        const name = f.split('/').pop() || f;
+        let title = name;
+        try { title = decodeURIComponent(name); } catch (e) { /* 保留原名 */ }
+        openMobilePlayer(f, title);
+        return;
+    }
+    console.log(plugin.eventBus)
     const u = f.slice(1).replace('.MP4', '.mp4');
-    if (plugin.app.plugins.some(p => p.name === 'siyuan-media-player')) {
-        window.dispatchEvent(new CustomEvent('playMediaItem', { 
-            detail: {
-                url: u,          // 必需：媒体URL
-            }
-        }));
+    const player = window.siyuanMediaPlayer;
+    if (typeof player?.playMediaItem === 'function') {
+        player.playMediaItem({
+            url: u,
+            title: u.split('/').pop() || u,
+            position: 'right',
+        });
         return;
     }
 

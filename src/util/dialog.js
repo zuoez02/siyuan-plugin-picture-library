@@ -15,7 +15,7 @@ export async function createFolder() {
             width: '400px',
         });
         const input = dialog.element.querySelector('input');
-        const cancel  = dialog.element.querySelector('.b3-button--cancel')
+        const cancel  = dialog.element.querySelector('.b3-button--cancel');
         const confirm = dialog.element.querySelector('.b3-button--text');
         cancel.addEventListener('click', () => {
             reject();
@@ -26,7 +26,7 @@ export async function createFolder() {
                 return;
             }
             resolve(input.value.trim());
-            dialog.destroy()
+            dialog.destroy();
         });
-    })
+    });
 }

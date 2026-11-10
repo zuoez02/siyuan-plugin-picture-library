@@ -1,19 +1,22 @@
-import { Plugin } from "siyuan";
-import ElementPlus from 'element-plus'
-import 'element-plus/dist/index.css'
+import { Plugin, openTab } from 'siyuan';
+import ElementPlus from 'element-plus';
+import 'element-plus/dist/index.css';
 import Dock from './components/dock.vue';
 import Tab from './components/tab.vue';
 import { createApp } from 'vue';
-import { Storage } from "./storage";
+import { Storage } from './storage';
 import { reactive } from 'vue';
 import { _, setI18n } from './util/i18n';
 import { icon, carousel } from './assets/icon';
 import { registerIcon } from './util/registerIcon';
 import './style.css';
-import { TAB_TYPE, ICON, CAROUSEL } from "./util/constants";
+import { TAB_TYPE, ICON, CAROUSEL } from './util/constants';
 import { updateRenderer } from './util/renderer';
 import { changeHeight, changeSize, changeSort } from './util/update-block';
 import { changelog } from 'sy-plugin-changelog';
+import { parseGalleryUrl } from './util/gallery-link';
+import { openMobileGallery } from './util/mobile-gallery';
+import { isMobileFrontend } from './util/mobile';
 
 export default class PictureLibraryPlugin extends Plugin {
   folders = [];
@@ -32,7 +35,7 @@ export default class PictureLibraryPlugin extends Plugin {
     sorts: ['nameIncrease', 'nameDescrease', 'dateIncrease', 'dateDecreases'],
     showImage: true,
     showVideo: true,
-  }
+  };
 
   onload() {
     changelog(this);
@@ -48,16 +51,20 @@ export default class PictureLibraryPlugin extends Plugin {
     try {
       require('@electron/remote').app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
     } catch {
-      console.warn("not allow in electron")
+      console.warn('not allow in electron');
     }
 
     // support custom block
-    this.eventBus.on("ws-main", updateRenderer);
+    this.eventBus.on('ws-main', updateRenderer);
+
+    // siyuan://plugins/<插件名>?type=... 链接：桌面开页签，移动端开全屏浮层
+    this.bindGalleryUrlHandler();
+    this.onLayoutReady(() => this.bindGalleryUrlHandler());
 
     this.tabFn = this.addTab({
       type: TAB_TYPE,
       init() {
-        this.element.classList.add("fn__flex");
+        this.element.classList.add('fn__flex');
         const tab = createApp(Tab);
         tab.use(ElementPlus);
         tab.provide('plugin', plugin);
@@ -72,7 +79,7 @@ export default class PictureLibraryPlugin extends Plugin {
 
     this.addDock({
       config: {
-        position: "RightTop",
+        position: 'RightTop',
         size: { width: 200, height: 0 },
         icon: ICON,
         title: this.i18n.title,
@@ -91,8 +98,38 @@ export default class PictureLibraryPlugin extends Plugin {
   }
 
 
+  // 思源重载插件时会换掉 eventBus，按总线实例幂等绑定，避免监听丢失
+  bindGalleryUrlHandler() {
+    if (this.galleryUrlBus === this.eventBus) {
+      return;
+    }
+    this.galleryUrlBus = this.eventBus;
+    // 注意：思源事件总线给监听器的是 CustomEvent，数据在 detail 里
+    this.eventBus.on('open-siyuan-url-plugin', (event) => this.openGalleryUrl(event && event.detail && event.detail.url));
+  }
+
+  openGalleryUrl(url) {
+    const target = parseGalleryUrl(url);
+    if (!target) {
+      return;
+    }
+    if (!this.tabFn || isMobileFrontend()) {
+      openMobileGallery(this, target.data);
+      return;
+    }
+    openTab({
+      app: this.app,
+      custom: {
+        title: target.title || target.data.name,
+        fn: this.tabFn,
+        icon: ICON,
+        data: target.data,
+      },
+    });
+  }
+
   addPluginBlockMenu() {
-    this.eventBus.on("click-blockicon", ({ detail }) => {
+    this.eventBus.on('click-blockicon', ({ detail }) => {
       const elements = detail.blockElements;
       if (elements.length !== 1) {
         return;
@@ -103,12 +140,12 @@ export default class PictureLibraryPlugin extends Plugin {
       }
       const id = elements[0].getAttribute('data-node-id');
       const index = el
-        .getAttribute("data-content")
+        .getAttribute('data-content')
         .indexOf('data-plugin="siyuan-plugin-picture-library"');
       if (index < 0) {
         return;
       }
-      const content = el.getAttribute("data-content");
+      const content = el.getAttribute('data-content');
       const path = /data-path="(.*)"/.exec(content);
       if (!path || !path[1]) {
         return;
@@ -118,7 +155,7 @@ export default class PictureLibraryPlugin extends Plugin {
         icon: ICON,
         label: this.i18n.changeHeight,
         click: () => changeHeight(id, height && height[1] || '400px'),
-      })
+      });
       const size = /data-size="(\w+)"/.exec(content);
       detail.menu.addItem({
         icon: ICON,
@@ -130,7 +167,7 @@ export default class PictureLibraryPlugin extends Plugin {
         icon: ICON,
         label: this.i18n.changeSort,
         click: () => changeSort(id, sort && sort[1] || 'random'),
-      })
+      });
     });
   }
 

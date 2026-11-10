@@ -18,7 +18,7 @@ export const changeHeight = async (id, height) => {
     });
     const input = dialog.element.querySelector('input');
     input.value = parseInt(height);
-    const cancel  = dialog.element.querySelector('.b3-button--cancel')
+    const cancel  = dialog.element.querySelector('.b3-button--cancel');
     const confirm = dialog.element.querySelector('.b3-button--text');
     cancel.addEventListener('click', () => {
         dialog.destroy();
@@ -27,8 +27,8 @@ export const changeHeight = async (id, height) => {
         if (!input.value.trim()) {
             return;
         }
-        updateBlock(id, content.replace(height, `${input.value}px`))
-        dialog.destroy()
+        updateBlock(id, content.replace(height, `${input.value}px`));
+        dialog.destroy();
     });
 }
 
@@ -51,7 +51,7 @@ export const changeSize = async (id, size) => {
     });
     const select = dialog.element.querySelector('select');
     select.value = size || 'contain';
-    const cancel  = dialog.element.querySelector('.b3-button--cancel')
+    const cancel  = dialog.element.querySelector('.b3-button--cancel');
     const confirm = dialog.element.querySelector('.b3-button--text');
     cancel.addEventListener('click', () => {
         dialog.destroy();
@@ -66,9 +66,9 @@ export const changeSize = async (id, size) => {
             const newContent = content.slice(0, position) + ` data-size="${select.value.trim()}" ` + content.slice(position);
             updateBlock(id, newContent);
         } else {
-            updateBlock(id, content.replace(`data-size="${size}"`, `data-size="${select.value.trim()}"`))
+            updateBlock(id, content.replace(`data-size="${size}"`, `data-size="${select.value.trim()}"`));
         }
-        dialog.destroy()
+        dialog.destroy();
     });
 }
 
@@ -94,7 +94,7 @@ export const changeSort = async (id, sort) => {
     });
     const select = dialog.element.querySelector('select');
     select.value = sort || 'contain';
-    const cancel  = dialog.element.querySelector('.b3-button--cancel')
+    const cancel  = dialog.element.querySelector('.b3-button--cancel');
     const confirm = dialog.element.querySelector('.b3-button--text');
     cancel.addEventListener('click', () => {
         dialog.destroy();
@@ -109,8 +109,8 @@ export const changeSort = async (id, sort) => {
             const newContent = content.slice(0, position) + ` data-sort="${select.value.trim()}" ` + content.slice(position);
             updateBlock(id, newContent);
         } else {
-            updateBlock(id, content.replace(`data-sort="${sort}"`, `data-sort="${select.value.trim()}"`))
+            updateBlock(id, content.replace(`data-sort="${sort}"`, `data-sort="${select.value.trim()}"`));
         }
-        dialog.destroy()
+        dialog.destroy();
     });
 }
