@@ -11,6 +11,7 @@ import { createFolder } from '../util/dialog';
 import { openTab, confirm } from 'siyuan';
 import { _ } from '../util/i18n';
 import { TAB_TYPE, ICON } from '../util/constants'
+import { buildGalleryMarkdown } from '../util/gallery-link';
 import { openMobileGallery } from '../util/mobile-gallery';
 import { isMobileFrontend } from '../util/mobile';
 import { openMobileActionSheet } from '../util/mobile-actions';
@@ -33,12 +34,7 @@ const updateDatasource = (s) => {
 }
 
 const copyLink = (node) => {
-  const pluginName = "siyuan-plugin-picture-library";
-  const tabType = TAB_TYPE;
-  const link = `siyuan://plugins/${pluginName}${tabType}?icon=${ICON}&title=${node.name}&data=${JSON.stringify(
-    { name: node.name, path: node.path }
-  )}`;
-  navigator.clipboard.writeText(`[${node.name}](${encodeURI(link)})`);
+  navigator.clipboard.writeText(buildGalleryMarkdown(node));
 };
 
 const copyCarousel = (node) => {

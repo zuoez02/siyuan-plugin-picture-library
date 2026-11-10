@@ -1,4 +1,4 @@
-import { Plugin } from 'siyuan';
+import { Plugin, openTab } from 'siyuan';
 import ElementPlus from 'element-plus';
 import 'element-plus/dist/index.css';
 import Dock from './components/dock.vue';
@@ -14,6 +14,9 @@ import { TAB_TYPE, ICON, CAROUSEL } from './util/constants';
 import { updateRenderer } from './util/renderer';
 import { changeHeight, changeSize, changeSort } from './util/update-block';
 import { changelog } from 'sy-plugin-changelog';
+import { parseGalleryUrl } from './util/gallery-link';
+import { openMobileGallery } from './util/mobile-gallery';
+import { isMobileFrontend } from './util/mobile';
 
 export default class PictureLibraryPlugin extends Plugin {
   folders = [];
@@ -54,6 +57,10 @@ export default class PictureLibraryPlugin extends Plugin {
     // support custom block
     this.eventBus.on('ws-main', updateRenderer);
 
+    // siyuan://plugins/<插件名>?type=... 链接：桌面开页签，移动端开全屏浮层
+    this.bindGalleryUrlHandler();
+    this.onLayoutReady(() => this.bindGalleryUrlHandler());
+
     this.tabFn = this.addTab({
       type: TAB_TYPE,
       init() {
@@ -90,6 +97,36 @@ export default class PictureLibraryPlugin extends Plugin {
     })
   }
 
+
+  // 思源重载插件时会换掉 eventBus，按总线实例幂等绑定，避免监听丢失
+  bindGalleryUrlHandler() {
+    if (this.galleryUrlBus === this.eventBus) {
+      return;
+    }
+    this.galleryUrlBus = this.eventBus;
+    // 注意：思源事件总线给监听器的是 CustomEvent，数据在 detail 里
+    this.eventBus.on('open-siyuan-url-plugin', (event) => this.openGalleryUrl(event && event.detail && event.detail.url));
+  }
+
+  openGalleryUrl(url) {
+    const target = parseGalleryUrl(url);
+    if (!target) {
+      return;
+    }
+    if (!this.tabFn || isMobileFrontend()) {
+      openMobileGallery(this, target.data);
+      return;
+    }
+    openTab({
+      app: this.app,
+      custom: {
+        title: target.title || target.data.name,
+        fn: this.tabFn,
+        icon: ICON,
+        data: target.data,
+      },
+    });
+  }
 
   addPluginBlockMenu() {
     this.eventBus.on('click-blockicon', ({ detail }) => {

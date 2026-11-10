@@ -7,6 +7,7 @@
 - Mobile player gestures: swipe up to exit, drag horizontally to seek (HUD shows delta and target time)
 - Mobile image preview is now built in: swipe left/right to browse, swipe up to close, pinch to zoom, double-tap to toggle zoom, drag to pan when zoomed
 - Mobile dock: taller rows, larger text, per-row actions moved into a bottom sheet (copy link / copy panel / add sub-folder / delete)
+- Gallery links now use `siyuan://plugins/<plugin>?type=folderDetail&...`: desktop opens a tab, mobile opens the fullscreen gallery (old-format links cannot open on mobile — re-copy them)
 
 ## v0.3.2
 
