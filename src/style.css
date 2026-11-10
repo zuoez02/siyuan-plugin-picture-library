@@ -245,3 +245,25 @@ div[custom-plugin-id="siyuan-plugin-picture-library"] > .protyle-icons {
     object-fit: contain;
     background-color: #000;
 }
+
+/* 手势进度提示 */
+.sppl-mobile-player__hud {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    padding: 8px 14px;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.65);
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.4;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.sppl-mobile-player__hud--show {
+    opacity: 1;
+}

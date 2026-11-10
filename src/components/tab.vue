@@ -361,6 +361,11 @@ const prepareVideoEl = (el) => {
     if (!el) {
         return;
     }
+    // 移动端点一下就会触发 mouseover，预览视频会在后台一直播，禁掉
+    if (isMobileFrontend()) {
+        try { el.pause(); } catch (e) { /* ignore */ }
+        return;
+    }
     el.removeEventListener('mouseover', onMouseOverVideo)
     el.removeEventListener('mouseleave', onMouseLeaveVideo)
     el.addEventListener('mouseover', onMouseOverVideo)

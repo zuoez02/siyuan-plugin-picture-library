@@ -4,6 +4,7 @@
 - Mobile top bar with back / settings / close; settings collapsed behind a gear button
 - Video thumbnails: seek to first frame via media fragment (fixes blank tiles on iOS Safari)
 - Mobile: tap a video to play it in a native fullscreen player (media player plugin opens into a hidden panel on mobile)
+- Mobile player gestures: swipe up to exit, drag horizontally to seek (HUD shows delta and target time)
 
 ## v0.3.2
 
