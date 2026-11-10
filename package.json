@@ -1,6 +1,6 @@
 {
   "name": "siyuan-plugin-picture-library",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "思源picture-library Plugin",
   "repository": {
     "type": "git",
@@ -14,8 +14,6 @@
   },
   "homepage": "https://github.com/zuoez02/siyuan-plugin-picture-library#readme",
   "devDependencies": {
-    "eslint": "^8.43.0",
-    "eslint-plugin-react": "^7.32.2",
     "vite": "^4.3.9"
   },
   "dependencies": {
@@ -37,6 +35,8 @@
   "scripts": {
     "make-link": "New-Item -ItemType SymbolicLink -Path \"siyuan-plugin-picture-library\" -Target \"E:\\github\\siyuan-plugin-picture-library\\\"",
     "build": "vite build",
-    "dev": "vite build --watch"
+    "dev": "vite build --watch",
+    "lint": "eslint src/**/*.{js,vue} --fix",
+    "lint-check": "eslint src/**/*.{js,vue}"
   }
 }

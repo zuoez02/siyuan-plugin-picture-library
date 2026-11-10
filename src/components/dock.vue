@@ -27,11 +27,11 @@ const storage = plugin.storage;
 const add = () => {
     createFolder().then((v) => {
         storage.addRootFolder(v);
-    })
-}
+    });
+};
 
 const refresh = () => {
     storage.refresh();
-}
+};
 
 </script>

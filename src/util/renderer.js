@@ -9,8 +9,8 @@ const rendereMap = new Map();
 
 export function html_decode(str) 
 { 
-    var s = ""; 
-    if (str.length == 0) return ""; 
+    let s = ''; 
+    if (str.length == 0) return ''; 
     s = str.replace(/&amp;/g, "&"); 
     s = s.replace(/&lt;/g, "<"); 
     s = s.replace(/&gt;/g, ">"); 
@@ -69,8 +69,8 @@ export function updateRenderer(e) {
       view.provide('sort', s1);
       view.mount(d);
       rendereMap.set(protyle, view);
-      d.insertAdjacentHTML('afterbegin', `<style>${style}</style>`)
-      d.insertAdjacentHTML('afterbegin', `<style>${carouselcss}</style>`)
+      d.insertAdjacentHTML('afterbegin', `<style>${style}</style>`);
+      d.insertAdjacentHTML('afterbegin', `<style>${carouselcss}</style>`);
     }
   });
 }
