@@ -11,7 +11,8 @@ import { createFolder } from '../util/dialog';
 import { openTab, confirm } from 'siyuan';
 import { _ } from '../util/i18n';
 import { TAB_TYPE, ICON } from '../util/constants'
-import { isMobileFrontend, openMobileGallery } from '../util/mobile-gallery';
+import { openMobileGallery } from '../util/mobile-gallery';
+import { isMobileFrontend } from '../util/mobile';
 
 const plugin = inject('plugin');
 const storage = plugin.storage;

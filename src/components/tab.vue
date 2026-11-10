@@ -142,6 +142,8 @@ import { getPngFunc, isPicture } from '../util/image';
 import InfiniteLoading from "v3-infinite-loading";
 import "v3-infinite-loading/lib/style.css";
 import View from './view.vue';
+import { isMobileFrontend } from '../util/mobile';
+import { openMobilePlayer } from '../util/mobile-player';
 
 // @ts-ignore
 const { path } = inject('folder');
@@ -386,6 +388,13 @@ const onMouseLeaveVideo = (e) => {
 }
 
 const onClickVideo = (f) => {
+    if (isMobileFrontend()) {
+        const name = f.split('/').pop() || f;
+        let title = name;
+        try { title = decodeURIComponent(name); } catch (e) { /* 保留原名 */ }
+        openMobilePlayer(f, title);
+        return;
+    }
     console.log(plugin.eventBus)
     const u = f.slice(1).replace('.MP4', '.mp4');
     const player = window.siyuanMediaPlayer;

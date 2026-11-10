@@ -180,3 +180,68 @@ div[custom-plugin-id="siyuan-plugin-picture-library"] > .protyle-icons {
     height: 100%;
     object-fit: cover;
 }
+
+/* ---------- 移动端全屏视频播放器 ---------- */
+.sppl-mobile-player {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    background-color: #000;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.sppl-mobile-player__bar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: env(safe-area-inset-top) 8px 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: #fff;
+}
+
+.sppl-mobile-player__btn {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    color: #fff;
+}
+
+.sppl-mobile-player__btn:active {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.sppl-mobile-player__btn svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.sppl-mobile-player__title {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #fff;
+}
+
+.sppl-mobile-player__video {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background-color: #000;
+}

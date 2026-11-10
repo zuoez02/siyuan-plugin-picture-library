@@ -2,29 +2,13 @@ import { createApp } from 'vue';
 import ElementPlus from 'element-plus';
 import Tab from '../components/tab.vue';
 import { _ } from './i18n';
+import { closeMobilePlayer } from './mobile-player';
 
 let overlay = null;
 let app = null;
 
-/**
- * 当前前端是否为移动端（含手机浏览器）。
- * 优先使用官方 getFrontend()；取不到时回退到「没有 #toolbar 即移动端」。
- */
-export const isMobileFrontend = () => {
-    try {
-        // @ts-ignore
-        const { getFrontend } = require('siyuan');
-        const frontend = getFrontend && getFrontend();
-        if (frontend) {
-            return frontend === 'mobile' || frontend === 'browser-mobile';
-        }
-    } catch (e) {
-        // ignore
-    }
-    return !document.getElementById('toolbar');
-};
-
 export const closeMobileGallery = () => {
+    closeMobilePlayer();
     if (app) {
         try {
             app.unmount();
