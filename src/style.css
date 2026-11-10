@@ -56,3 +56,127 @@ div[custom-plugin-id="siyuan-plugin-picture-library"] > .protyle-icons {
     object-fit: cover;
     background-color: #f5f5f5;
 }
+/* ---------- 移动端全屏图库（手机 App / 手机浏览器） ---------- */
+.sppl-mobile-overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--b3-theme-background);
+    color: var(--b3-theme-on-background);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.sppl-mobile-overlay__bar {
+    position: relative;
+    z-index: 2;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 44px;
+    padding: 0 8px;
+    background-color: var(--b3-theme-background);
+    border-bottom: 1px solid var(--b3-border-color);
+}
+
+.sppl-mobile-overlay__btn {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    color: var(--b3-theme-on-background);
+}
+
+.sppl-mobile-overlay__btn:active {
+    background-color: var(--b3-theme-surface-lighter);
+}
+
+.sppl-mobile-overlay__btn svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.sppl-mobile-overlay__title {
+    flex: 1;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 500;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.sppl-mobile-overlay__body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sppl-mobile-overlay .sppl-plugin-tab {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 设置项：默认收起，点顶栏齿轮展开，避免挤占图片区域 */
+.sppl-mobile-overlay .sppl-plugin-tab .tab-setting {
+    display: none;
+    flex: 0 0 auto;
+    max-height: 45vh;
+    overflow-y: auto;
+    padding: 8px;
+    border-bottom: 1px solid var(--b3-border-color);
+}
+
+.sppl-mobile-overlay--settings .sppl-plugin-tab .tab-setting {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+}
+
+.sppl-mobile-overlay .tab-setting-item {
+    margin: 0;
+}
+
+/* 依赖 Electron 的操作在浏览器 / 手机上不显示 */
+.sppl-mobile-overlay .sppl-desktop-only {
+    display: none !important;
+}
+
+.sppl-mobile-overlay .sppl-plugin-tab .image-wall,
+.sppl-mobile-overlay .sppl-plugin-tab .manga-wall {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 4px;
+    gap: 4px;
+}
+
+.sppl-mobile-overlay .sppl-plugin-tab .image-wall .sppl-image,
+.sppl-mobile-overlay .sppl-plugin-tab .image-wall .video-preview {
+    width: calc(50% - 12px) !important;
+    height: 45vw !important;
+    margin: 4px;
+}
+
+.sppl-mobile-overlay .sppl-plugin-tab .image-wall .sppl-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}

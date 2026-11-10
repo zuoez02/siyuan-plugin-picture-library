@@ -1,3 +1,9 @@
+## v0.10.0
+
+- Mobile support: gallery renders in a fullscreen overlay (mobile & browser-mobile frontends)
+- Mobile top bar with back / settings / close; settings collapsed behind a gear button
+- Video thumbnails: seek to first frame via media fragment (fixes blank tiles on iOS Safari)
+
 ## v0.3.2
 
 - Add change sort in display panel

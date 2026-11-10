@@ -59,11 +59,11 @@
                 <button class="b3-button" @click="onPaste">{{ _('pasteImage')
                     }}</button>
             </div>
-            <div class="tab-setting-item">
+            <div class="tab-setting-item sppl-desktop-only">
                 <button class="b3-button" @click="toggleClipboardWatch">{{ !timerAutoClipboard ? _('toggleClipboardWatchOn') : _('toggleClipboardWatchOff')
                     }}</button>
             </div>
-            <div class="tab-setting-item">
+            <div class="tab-setting-item sppl-desktop-only">
                 <button class="b3-button" @click="onShowInFloder">{{ _('showInFolder') }}</button>
             </div>
             <div class="tab-setting-item">
@@ -87,7 +87,7 @@
             </View>
             <div v-if="setting.showVideo && infiniteImages.length === images.length" class="video-preview" @contextmenu="onContextClick(f, $event)" :key="f"
                 v-for="(f, $i) in videoUrls" v-on:click="() => onClickVideo(f)" :class="gridClass">
-                <video :src="f" class="sppl-video" preload="metadata" loop muted playsinline
+                <video :src="videoSrc(f)" class="sppl-video" preload="metadata" loop muted playsinline
                     :ref="(el) => prepareVideoEl(el)"></video>
                 <div class="play-icon" style="">
                     <span class="sppl-duration" :ref="(el) => getVideo(el)"></span>
@@ -193,6 +193,9 @@ const onInfiniteLoad = (e) => {
     page.value++;
     infiniteTriggered.value = true;
 }
+
+// iOS Safari 在只有 metadata 时不绘制首帧，media fragment 让它定位到 0.1s 出封面
+const videoSrc = (f) => `${f}#t=0.1`;
 
 const getVideo = (el) => {
     if (!el || el.textContent.length > 0) {
@@ -383,13 +386,15 @@ const onMouseLeaveVideo = (e) => {
 }
 
 const onClickVideo = (f) => {
+    console.log(plugin.eventBus)
     const u = f.slice(1).replace('.MP4', '.mp4');
-    if (plugin.app.plugins.some(p => p.name === 'siyuan-media-player')) {
-        window.dispatchEvent(new CustomEvent('playMediaItem', { 
-            detail: {
-                url: u,          // 必需：媒体URL
-            }
-        }));
+    const player = window.siyuanMediaPlayer;
+    if (typeof player?.playMediaItem === 'function') {
+        player.playMediaItem({
+            url: u,
+            title: u.split('/').pop() || u,
+            position: 'right',
+        });
         return;
     }
 
