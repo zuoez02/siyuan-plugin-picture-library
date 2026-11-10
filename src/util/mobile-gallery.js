@@ -26,6 +26,51 @@ export const closeMobileGallery = () => {
     }
 };
 
+const SWIPE_CLOSE_DISTANCE = 80;
+const SWIPE_HORIZONTAL_RATIO = 1.5;
+
+/**
+ * 右滑关闭图库浮层（不做跟手动画）。
+ * 只认「向右为主、位移够大」的滑动，避免和纵向滚动、点按冲突；
+ * 上面还压着播放器 / 大图预览时交给它们自己处理。
+ */
+const bindSwipeToClose = (el) => {
+    let tracking = false;
+    let startX = 0;
+    let startY = 0;
+
+    const hasLayerAbove = () => !!document.querySelector('.sppl-mobile-player, .sppl-mobile-viewer');
+
+    el.addEventListener('touchstart', (e) => {
+        tracking = e.touches.length === 1 && !hasLayerAbove();
+        if (tracking) {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        }
+    }, { passive: true });
+
+    el.addEventListener('touchend', (e) => {
+        if (!tracking) {
+            return;
+        }
+        tracking = false;
+        const touch = e.changedTouches && e.changedTouches[0];
+        if (!touch || hasLayerAbove()) {
+            return;
+        }
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+        if (dx < SWIPE_CLOSE_DISTANCE || Math.abs(dx) < Math.abs(dy) * SWIPE_HORIZONTAL_RATIO) {
+            return;
+        }
+        closeMobileGallery();
+    });
+
+    el.addEventListener('touchcancel', () => {
+        tracking = false;
+    });
+};
+
 /**
  * 移动端没有自定义页签（addTab 在移动端是空实现），
  * 这里用全屏浮层承载同一个图库视图。
@@ -61,6 +106,8 @@ export const openMobileGallery = (plugin, folder) => {
     app.provide('plugin', plugin);
     app.provide('folder', folder);
     app.mount(overlay.querySelector('.sppl-mobile-overlay__body'));
+
+    bindSwipeToClose(overlay);
 
     return overlay;
 };
