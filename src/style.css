@@ -345,3 +345,160 @@ div[custom-plugin-id="siyuan-plugin-picture-library"] > .protyle-icons {
     user-select: none;
     -webkit-user-drag: none;
 }
+
+/* ---------- 移动端侧边栏（图库 Dock） ---------- */
+.sppl-dock--mobile .block__icons {
+    height: 48px;
+    padding: 0 6px;
+}
+
+.sppl-dock--mobile .block__logo {
+    font-size: 15px;
+}
+
+.sppl-dock--mobile .block__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin: 0 2px;
+    border-radius: 8px;
+}
+
+.sppl-dock--mobile .block__icon:active {
+    background-color: var(--b3-theme-surface-lighter);
+}
+
+.sppl-dock--mobile .block__icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.sppl-dock--mobile .el-tree-node__content {
+    height: 48px;
+    border-radius: 8px;
+}
+
+.sppl-dock--mobile .el-tree-node__expand-icon {
+    font-size: 14px;
+    padding: 12px 8px;
+}
+
+.sppl-dock--mobile .sppl-tree-node--mobile {
+    gap: 8px;
+    padding-right: 4px;
+}
+
+.sppl-dock--mobile .sppl-tree-node__name {
+    flex: 1;
+    min-width: 0;
+    font-size: 15px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.sppl-dock--mobile .sppl-node-more {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    font-size: 20px;
+    line-height: 1;
+    color: var(--b3-theme-on-surface);
+}
+
+.sppl-dock--mobile .sppl-node-more:active {
+    background-color: var(--b3-theme-surface-lighter);
+}
+
+/* ---------- 移动端底部操作面板 ---------- */
+.sppl-mobile-sheet {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1300;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.sppl-mobile-sheet__mask {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.45);
+}
+
+.sppl-mobile-sheet__panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    border-radius: 14px 14px 0 0;
+    background-color: var(--b3-theme-background);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.25);
+    animation: sppl-sheet-in 0.18s ease;
+}
+
+@keyframes sppl-sheet-in {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+.sppl-mobile-sheet__title {
+    padding: 10px 12px;
+    font-size: 13px;
+    text-align: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--b3-theme-on-surface);
+}
+
+.sppl-mobile-sheet__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 52px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 10px;
+    background-color: transparent;
+    font-size: 16px;
+    text-align: left;
+    color: var(--b3-theme-on-background);
+}
+
+.sppl-mobile-sheet__item:active {
+    background-color: var(--b3-theme-surface-lighter);
+}
+
+.sppl-mobile-sheet__icon {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
+.sppl-mobile-sheet__item--cancel {
+    justify-content: center;
+    margin-top: 6px;
+    border-top: 1px solid var(--b3-border-color);
+    border-radius: 0;
+    color: var(--b3-theme-on-surface);
+}
