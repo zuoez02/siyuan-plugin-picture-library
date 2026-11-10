@@ -5,7 +5,7 @@
 - Video thumbnails: seek to first frame via media fragment (fixes blank tiles on iOS Safari)
 - Mobile: tap a video to play it in a native fullscreen player (media player plugin opens into a hidden panel on mobile)
 - Mobile player gestures: swipe up to exit, drag horizontally to seek (HUD shows delta and target time)
-- Mobile image viewer: swipe left/right to switch images (ignored while the image is zoomed)
+- Mobile image preview is now built in: swipe left/right to browse, swipe up to close, pinch to zoom, double-tap to toggle zoom, drag to pan when zoomed
 
 ## v0.3.2
 

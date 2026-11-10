@@ -3,13 +3,14 @@ import ElementPlus from 'element-plus';
 import Tab from '../components/tab.vue';
 import { _ } from './i18n';
 import { closeMobilePlayer } from './mobile-player';
-import { bindMobileImageViewer } from './mobile-image-viewer';
+import { closeMobileImageViewer } from './mobile-image-viewer';
 
 let overlay = null;
 let app = null;
 
 export const closeMobileGallery = () => {
     closeMobilePlayer();
+    closeMobileImageViewer();
     if (app) {
         try {
             app.unmount();
@@ -31,7 +32,6 @@ export const closeMobileGallery = () => {
  */
 export const openMobileGallery = (plugin, folder) => {
     closeMobileGallery();
-    bindMobileImageViewer();
 
     overlay = document.createElement('div');
     overlay.className = 'sppl-mobile-overlay';

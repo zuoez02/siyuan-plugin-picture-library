@@ -119,7 +119,9 @@
         <div class="manga-wall" v-if="setting.showImage && setting.mode === 'manga'">
             <el-image :key="f" v-for="(f, $i) in images" class="sppl-manga" :style="mangaStyle" :src="f" fit="cover"
                 :hide-on-click-modal="true"
-                @contextmenu="onContextClick(f, $event)" :initial-index="$i" :preview-src-list="images" :lazy="true"
+                @contextmenu="onContextClick(f, $event)" :lazy="true"
+                v-bind="isMobile ? {} : { 'initial-index': $i, 'preview-src-list': images }"
+                @click="onMangaClick($i)"
                 loading="lazy">
                 <template #error>
                     <div class="image-slot" @click="() => sm(f)" @contextmenu="onContextClick(f, $event)">{{
@@ -144,10 +146,20 @@ import "v3-infinite-loading/lib/style.css";
 import View from './view.vue';
 import { isMobileFrontend } from '../util/mobile';
 import { openMobilePlayer } from '../util/mobile-player';
+import { openMobileImageViewer } from '../util/mobile-image-viewer';
 
 // @ts-ignore
 const { path } = inject('folder');
 const plugin = inject('plugin');
+
+const isMobile = isMobileFrontend();
+
+// 移动端用自建预览层（支持左右切换 / 上滑关闭 / 双指缩放）
+const onMangaClick = (i) => {
+    if (isMobile) {
+        openMobileImageViewer(images.value, i);
+    }
+};
 
 const showDropHover = ref(false);
 
