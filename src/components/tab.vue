@@ -568,6 +568,17 @@ const normalizeName = (file) => {
     return `${name}.${sub === 'quicktime' ? 'mov' : sub}`;
 };
 
+// 自建 WebView 套壳里，<input type=file> 拿到的是壳子回传的文件；有些实现只给了
+// 一个 content:// 壳子，File 本身读不出字节（size 对但传输 0 字节）。先自己把字节读进
+// 内存再上传，既能避开这个问题，也能在失败时报出「声明大小 vs 实际读到大小」。
+const readFileBytes = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error('FileReader 读取失败'));
+    reader.onabort = () => reject(new Error('读取被中断'));
+    reader.readAsArrayBuffer(file);
+});
+
 // 直接调 putFile 以便拿到 HTTP 状态：storage.addFiles 不检查响应，失败也是静默的
 // 用 XHR 而不是 fetch：iOS Safari 上用 fetch 传大 multipart 偶尔直接 Load failed，
 // 而且拿不到上传进度，出错也说不清是网络断了还是服务端拒绝。
@@ -639,11 +650,30 @@ const onFilesSelected = async (event) => {
         }
         const target = `${path}/${name}`;
         const label = `${i + 1}/${accepted.length} ${name}`;
+        uploadStatus.value = `读取 ${label}`;
+
+        let payload = file;
+        try {
+            const buf = await readFileBytes(file);
+            const read = buf ? buf.byteLength : 0;
+            if (!read) {
+                errors.push(`${name}: 读取到 0 字节（壳子可能只给了个空壳文件，声明 ${file.size} 字节）`);
+                continue;
+            }
+            payload = new File([buf], name, { type: file.type || '' });
+            if (file.size && read !== file.size) {
+                uploadStatus.value = `注意 ${label}：声明 ${file.size} 实读 ${read} 字节`;
+            }
+        } catch (e) {
+            errors.push(`${name}: 读取失败 ${(e && e.message) || e}（声明 ${file.size} 字节）`);
+            continue;
+        }
+
         uploadStatus.value = `上传中 ${label}`;
         const onProgress = (pct) => {
             uploadStatus.value = `上传中 ${label} ${pct}%`;
         };
-        let result = await putFile(target, file, onProgress);
+        let result = await putFile(target, payload, onProgress);
         // 网络类失败重试一次（真机上偶发隧道抖动）
         if (!result.ok && result.status === 0) {
             uploadStatus.value = `重试 ${label}`;
@@ -652,7 +682,7 @@ const onFilesSelected = async (event) => {
         if (result.ok) {
             okCount++;
         } else {
-            errors.push(`${name}: ${result.status ? 'HTTP ' + result.status + ' ' : ''}${result.msg}`.trim());
+            errors.push(`${name}（${payload.size}B ${file.type || '无类型'}）: ${result.status ? 'HTTP ' + result.status + ' ' : ''}${result.msg}`.trim());
         }
     }
 
