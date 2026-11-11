@@ -540,12 +540,21 @@ const extOf = (name) => {
     return idx >= 0 ? lower.slice(idx) : '';
 };
 
+// iPhone 相册原图常是 HEIC，思源的图片组件渲染不了，传上去也是空白格，直接拦掉并提示
+const UNSUPPORTED_EXT = ['.heic', '.heif'];
+
 const isSupportedFile = (file) => {
     const ext = extOf(file.name);
+    if (UNSUPPORTED_EXT.includes(ext)) {
+        return false;
+    }
     if (ext && SUPPORTED_EXT.includes(ext)) {
         return true;
     }
     const type = (file.type || '').toLowerCase();
+    if (type === 'image/heic' || type === 'image/heif') {
+        return false;
+    }
     return type.startsWith('image/') || type.startsWith('video/');
 };
 
@@ -560,20 +569,41 @@ const normalizeName = (file) => {
 };
 
 // 直接调 putFile 以便拿到 HTTP 状态：storage.addFiles 不检查响应，失败也是静默的
-const putFile = async (target, file) => {
+// 用 XHR 而不是 fetch：iOS Safari 上用 fetch 传大 multipart 偶尔直接 Load failed，
+// 而且拿不到上传进度，出错也说不清是网络断了还是服务端拒绝。
+const putFile = (target, file, onProgress) => new Promise((resolve) => {
     const fd = new FormData();
     fd.append('path', target);
     fd.append('isDir', 'false');
     fd.append('file', file);
-    const res = await fetch('/api/file/putFile', { method: 'POST', body: fd });
-    let body = null;
-    try {
-        body = await res.json();
-    } catch (e) {
-        // 空响应或非 JSON
-    }
-    return { status: res.status, ok: res.ok && (!body || body.code === 0), msg: (body && body.msg) || '' };
-};
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/file/putFile');
+    xhr.timeout = 180000;
+    xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && typeof onProgress === 'function') {
+            onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+    };
+    xhr.onload = () => {
+        let body = null;
+        try {
+            body = JSON.parse(xhr.responseText);
+        } catch (e) {
+            // 空响应或非 JSON（例如反向代理的 413 页面）
+        }
+        const httpOk = xhr.status >= 200 && xhr.status < 300;
+        resolve({
+            status: xhr.status,
+            ok: httpOk && (!body || body.code === 0),
+            msg: (body && body.msg) || (httpOk ? '' : (xhr.responseText || '').slice(0, 80)),
+        });
+    };
+    xhr.onerror = () => resolve({ status: 0, ok: false, msg: '网络错误，请求没有送达' });
+    xhr.ontimeout = () => resolve({ status: 0, ok: false, msg: '上传超时（180s）' });
+    xhr.onabort = () => resolve({ status: 0, ok: false, msg: '上传被中断' });
+    xhr.send(fd);
+});
 
 const onFilesSelected = async (event) => {
     const input = event.target;
@@ -588,7 +618,12 @@ const onFilesSelected = async (event) => {
     uploadStatus.value = `已选择 ${files.length} 个，可上传 ${accepted.length} 个，目录 ${path}`;
 
     if (!accepted.length) {
-        uploadStatus.value = `不支持的类型：${files.map((f) => f.name).join(', ')}`;
+        const names = files.map((f) => f.name).join(', ');
+        const hasHeic = files.some((f) => UNSUPPORTED_EXT.includes(extOf(f.name)) || /^image\/hei[cf]$/i.test(f.type || ''));
+        uploadStatus.value = `不支持的类型：${names}`;
+        showMessage(hasHeic
+            ? 'HEIC 格式无法在图库预览：请在 设置 → 相机 → 格式 里选择「兼容性最佳」，或先转成 JPG 再上传'
+            : `不支持的类型：${names}`);
         input.value = '';
         return;
     }
@@ -603,24 +638,30 @@ const onFilesSelected = async (event) => {
             name = id + '.' + name.split('.').pop();
         }
         const target = `${path}/${name}`;
-        uploadStatus.value = `上传中 ${i + 1}/${accepted.length}：${name}`;
-        try {
-            const result = await putFile(target, file);
-            if (result.ok) {
-                okCount++;
-            } else {
-                errors.push(`${name}: HTTP ${result.status} ${result.msg}`);
-            }
-        } catch (e) {
-            errors.push(`${name}: ${(e && e.message) || e}`);
+        const label = `${i + 1}/${accepted.length} ${name}`;
+        uploadStatus.value = `上传中 ${label}`;
+        const onProgress = (pct) => {
+            uploadStatus.value = `上传中 ${label} ${pct}%`;
+        };
+        let result = await putFile(target, file, onProgress);
+        // 网络类失败重试一次（真机上偶发隧道抖动）
+        if (!result.ok && result.status === 0) {
+            uploadStatus.value = `重试 ${label}`;
+            result = await putFile(target, file, onProgress);
+        }
+        if (result.ok) {
+            okCount++;
+        } else {
+            errors.push(`${name}: ${result.status ? 'HTTP ' + result.status + ' ' : ''}${result.msg}`.trim());
         }
     }
 
     if (errors.length) {
         uploadStatus.value = `成功 ${okCount}，失败 ${errors.length}：${errors[0]}`;
-        showMessage(_('uploadFailed').replace('%s', errors[0]));
+        showMessage(`上传失败：${errors[0]}`);
     } else {
         uploadStatus.value = `上传完成 ${okCount} 个 → ${path}`;
+        showMessage(`已上传 ${okCount} 个 → ${path}`);
         if (skipped > 0) {
             showMessage(_('uploadSkipped').replace('%s', String(skipped)));
         }
@@ -632,7 +673,10 @@ const onFilesSelected = async (event) => {
 
 onMounted(() => {
     getImagesAndVideos();
-    uploadFile.value.addEventListener('change', onFilesSelected);
+    if (uploadFile.value && !uploadFile.value.__spplBound) {
+        uploadFile.value.__spplBound = true;
+        uploadFile.value.addEventListener('change', onFilesSelected);
+    }
 });
 
 onUnmounted(() => {
