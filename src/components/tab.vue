@@ -4,39 +4,69 @@
         <div class="tab-setting">
             <div class="tab-setting-item">
                 <div class="b3-label__text">{{ _('mode') }}</div>
-                <select class="b3-select" v-model="setting.mode">
+                <select v-if="!isMobile" class="b3-select" v-model="setting.mode">
                     <option v-for="k in setting.modes" :value="k">{{ _(k) }}</option>
                 </select>
+                <button v-else class="b3-button sppl-picker"
+                    @click="pickOne('mode', setting.modes, (v) => _(v), _('mode'))">
+                    <span class="sppl-picker__value">{{ _(setting.mode) }}</span>
+                    <svg class="sppl-picker__arrow"><use xlink:href="#iconDown"></use></svg>
+                </button>
             </div>
             <div class="tab-setting-item" v-if="setting.mode === 'grid'">
                 <div class="b3-label__text">{{ _('size') }}</div>
-                <select class="b3-select" v-model="setting.size">
+                <select v-if="!isMobile" class="b3-select" v-model="setting.size">
                     <option v-for="k in setting.sizes" :value="k">{{ k }}</option>
                 </select>
+                <button v-else class="b3-button sppl-picker"
+                    @click="pickOne('size', setting.sizes, (v) => v, _('size'))">
+                    <span class="sppl-picker__value">{{ setting.size }}</span>
+                    <svg class="sppl-picker__arrow"><use xlink:href="#iconDown"></use></svg>
+                </button>
             </div>
             <div class="tab-setting-item" v-if="setting.mode === 'ratio'">
                 <div class="b3-label__text">{{ _('ratio') }}</div>
-                <select class="b3-select" v-model="setting.ratio">
+                <select v-if="!isMobile" class="b3-select" v-model="setting.ratio">
                     <option v-for="k in setting.ratios" :value="k">{{ _('ratio_' + k) }}</option>
                 </select>
+                <button v-else class="b3-button sppl-picker"
+                    @click="pickOne('ratio', setting.ratios, (v) => _('ratio_' + v), _('ratio'))">
+                    <span class="sppl-picker__value">{{ _('ratio_' + setting.ratio) }}</span>
+                    <svg class="sppl-picker__arrow"><use xlink:href="#iconDown"></use></svg>
+                </button>
             </div>
             <div class="tab-setting-item" v-if="setting.mode === 'ratio'">
                 <div class="b3-label__text">{{ _('size') }}</div>
-                <select class="b3-select" v-model="setting.ratioSize">
+                <select v-if="!isMobile" class="b3-select" v-model="setting.ratioSize">
                     <option v-for="k in setting.ratioSizes" :value="k">{{ k }}</option>
                 </select>
+                <button v-else class="b3-button sppl-picker"
+                    @click="pickOne('ratioSize', setting.ratioSizes, (v) => v, _('ratioSize'))">
+                    <span class="sppl-picker__value">{{ setting.ratioSize }}</span>
+                    <svg class="sppl-picker__arrow"><use xlink:href="#iconDown"></use></svg>
+                </button>
             </div>
             <div class="tab-setting-item" v-if="setting.mode === 'manga'">
                 <div class="b3-label__text">{{ _('mangaSize') }}</div>
-                <select class="b3-select" v-model="setting.mangaSize">
+                <select v-if="!isMobile" class="b3-select" v-model="setting.mangaSize">
                     <option v-for="k in setting.mangaSizes" :value="k">{{ k }}</option>
                 </select>
+                <button v-else class="b3-button sppl-picker"
+                    @click="pickOne('mangaSize', setting.mangaSizes, (v) => v, _('mangaSize'))">
+                    <span class="sppl-picker__value">{{ setting.mangaSize }}</span>
+                    <svg class="sppl-picker__arrow"><use xlink:href="#iconDown"></use></svg>
+                </button>
             </div>
             <div class="tab-setting-item">
                 <div class="b3-label__text">{{ _('sort') }}</div>
-                <select class="b3-select" v-model="setting.sort">
+                <select v-if="!isMobile" class="b3-select" v-model="setting.sort">
                     <option v-for="k in setting.sorts" :value="k">{{ _(k) }}</option>
                 </select>
+                <button v-else class="b3-button sppl-picker"
+                    @click="pickOne('sort', setting.sorts, (v) => _(v), _('sort'))">
+                    <span class="sppl-picker__value">{{ _(setting.sort) }}</span>
+                    <svg class="sppl-picker__arrow"><use xlink:href="#iconDown"></use></svg>
+                </button>
             </div>
             <div class="tab-setting-item">
                 <input type="checkbox" class="b3-button" v-model="setting.overwrite">
@@ -149,6 +179,7 @@ import View from './view.vue';
 import { isMobileFrontend } from '../util/mobile';
 import { openMobilePlayer } from '../util/mobile-player';
 import { openMobileImageViewer } from '../util/mobile-image-viewer';
+import { openMobilePicker } from '../util/mobile-picker';
 
 // @ts-ignore
 const { path } = inject('folder');
@@ -191,6 +222,18 @@ const videoUrls = computed(() => {
 })
 
 const setting = ref(plugin.setting);
+
+// 移动端下拉框改成底部选择面板（原生 select 在手机上点不动）
+const pickOne = (key, values, labelOf, title) => {
+    openMobilePicker({
+        title,
+        options: (values || []).map((v) => ({ value: v, label: labelOf(v) })),
+        value: setting.value[key],
+        onSelect: (v) => {
+            setting.value[key] = v;
+        },
+    });
+};
 
 // 添加新的设置项
 setting.value.modes = ['grid', 'manga', 'ratio'];

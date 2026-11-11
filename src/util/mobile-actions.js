@@ -42,6 +42,9 @@ export const openMobileActionSheet = (title, actions) => {
             labelEl.textContent = actions[0].cancelLabel || '取消';
         } else {
             labelEl.textContent = actions[idx].label || '';
+            if (actions[idx].selected) {
+                button.classList.add('sppl-mobile-sheet__item--selected');
+            }
             const use = button.querySelector('use');
             if (use && actions[idx].icon) {
                 use.setAttribute('xlink:href', `#${actions[idx].icon}`);

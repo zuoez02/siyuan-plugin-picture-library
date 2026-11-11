@@ -495,6 +495,35 @@ div[custom-plugin-id="siyuan-plugin-picture-library"] > .protyle-icons {
     fill: currentColor;
 }
 
+.sppl-mobile-sheet__item--selected {
+    color: var(--b3-theme-primary);
+    font-weight: 600;
+}
+
+.sppl-picker {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    width: 100%;
+    min-height: 34px;
+    padding: 0 8px;
+    text-align: left;
+}
+
+.sppl-picker__value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sppl-picker__arrow {
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    opacity: .65;
+}
+
 .sppl-mobile-sheet__item--cancel {
     justify-content: center;
     margin-top: 6px;
