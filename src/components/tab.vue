@@ -183,8 +183,9 @@ import "v3-infinite-loading/lib/style.css";
 import View from './view.vue';
 import { isMobileFrontend, isDesktopApp } from '../util/mobile';
 import { copyText, copyImageBlob, hasAsyncClipboard } from '../util/clipboard';
+import { onGalleryRefresh } from '../util/gallery-events';
 import { openMobilePlayer } from '../util/mobile-player';
-import { openMobileImageViewer } from '../util/mobile-image-viewer';
+import { openMobileImageViewer, closeMobileImageViewer } from '../util/mobile-image-viewer';
 import { openMobilePicker } from '../util/mobile-picker';
 
 // @ts-ignore
@@ -198,7 +199,13 @@ const desktopApp = isDesktopApp();
 // 移动端用自建预览层（支持左右切换 / 上滑关闭 / 双指缩放）
 const onMangaClick = (i) => {
     if (isMobile) {
-        openMobileImageViewer(images.value, i);
+        // 长按菜单里的「删除这张」：先关掉预览，再走统一的删除确认
+        openMobileImageViewer(images.value, i, {
+            onDelete: (url) => {
+                closeMobileImageViewer();
+                deleteFileConfirm(url);
+            },
+        });
     }
 };
 
@@ -832,8 +839,12 @@ const onAnyFileChange = (e) => {
     onFilesSelected({ target: el });
 };
 
+let offGalleryRefresh = null;
+
 onMounted(() => {
     getImagesAndVideos();
+    // 大图预览层里删图后，让当前页签重新拉一次列表
+    offGalleryRefresh = onGalleryRefresh(() => getImagesAndVideos());
     if (uploadFile.value && !uploadFile.value.__spplBound) {
         uploadFile.value.__spplBound = true;
         uploadFile.value.addEventListener('change', onFilesSelected);
@@ -845,6 +856,10 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+    if (typeof offGalleryRefresh === 'function') {
+        offGalleryRefresh();
+        offGalleryRefresh = null;
+    }
     document.removeEventListener('change', onAnyFileChange, true);
     document.removeEventListener('paste', onGlobalPaste);
     // @ts-ignore

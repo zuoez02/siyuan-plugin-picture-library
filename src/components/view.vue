@@ -9,8 +9,10 @@
 
 <script setup>
 import { computed, inject, onMounted, ref, useAttrs } from 'vue';
+import { confirm, showMessage } from 'siyuan';
 import { isMobileFrontend } from '../util/mobile';
-import { openMobileImageViewer } from '../util/mobile-image-viewer';
+import { openMobileImageViewer, closeMobileImageViewer } from '../util/mobile-image-viewer';
+import { emitGalleryRefresh } from '../util/gallery-events';
 
 defineOptions({ inheritAttrs: false });
 
@@ -46,8 +48,22 @@ const onClick = () => {
     const list = attrs.previewSrcList || attrs['preview-src-list'];
     const startIndex = attrs.initialIndex != null ? attrs.initialIndex : attrs['initial-index'];
     if (list && list.length) {
-        openMobileImageViewer(list, Number(startIndex) || 0);
+        openMobileImageViewer(list, Number(startIndex) || 0, { onDelete });
     }
+};
+
+// 长按菜单里的「删除这张」：确认后删文件并让图库刷新
+const onDelete = (url) => {
+    closeMobileImageViewer();
+    confirm('⚠️', '确认删除这张图片？', async () => {
+        try {
+            await plugin.storage.deleteFile('/data/' + decodeURI(url));
+            emitGalleryRefresh();
+            showMessage('已删除');
+        } catch (e) {
+            showMessage('删除失败：' + ((e && e.message) || e));
+        }
+    });
 };
 
 const onSrc = async (src) => {

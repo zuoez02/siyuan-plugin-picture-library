@@ -8,6 +8,10 @@
  * - 双指缩放（1x ~ 4x），放大后单指拖动查看
  * - 双击在 1x / 2.5x 之间切换
  */
+import { showMessage } from 'siyuan';
+import { openMobileActionSheet } from './mobile-actions';
+import { copyText } from './clipboard';
+
 const MIN_SCALE = 1;
 const MAX_SCALE = 4;
 const SWIPE_RATIO = 0.22;
@@ -34,6 +38,13 @@ let panX = 0;
 let panY = 0;
 let pinch = null;
 let lastTap = { at: 0, x: 0, y: 0 };
+
+// 长按（按住不动 500ms）弹出操作菜单，替代桌面端的右键菜单
+const LONG_PRESS_MS = 500;
+const LONG_PRESS_TOLERANCE = 10;
+let longPressTimer = null;
+let longPressed = false;
+let onDelete = null;
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
@@ -116,6 +127,139 @@ export const closeMobileImageViewer = () => {
     scale = 1;
     tx = 0;
     ty = 0;
+    clearLongPress();
+    longPressed = false;
+    onDelete = null;
+};
+
+const currentUrl = () => urls[index] || '';
+
+const currentName = () => {
+    const raw = (currentUrl().split('?')[0].split('/').pop()) || 'image';
+    try {
+        return decodeURIComponent(raw);
+    } catch (e) {
+        return raw;
+    }
+};
+
+const toast = (msg) => {
+    try {
+        showMessage(msg);
+    } catch (e) {
+        // ignore
+    }
+};
+
+/**
+ * 保存 / 下载当前图：
+ * 1. 系统分享面板（Android 上可直接「保存到相册」）
+ * 2. a[download] 触发浏览器下载
+ * 3. 退化为新标签打开，由用户长按保存
+ */
+const downloadCurrent = async () => {
+    const url = currentUrl();
+    if (!url) {
+        return;
+    }
+    const name = currentName();
+    const hint = () => toast('已开始下载：' + name);
+    try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const file = new File([blob], name, { type: blob.type || 'image/jpeg' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: name });
+            return;
+        }
+        const href = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = href;
+        a.download = name;
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            URL.revokeObjectURL(href);
+            a.remove();
+        }, 5000);
+        hint();
+    } catch (e) {
+        // 兜底：新标签打开，用户可以长按保存
+        window.open(url, '_blank');
+        toast('已在新标签打开，可长按保存');
+    }
+};
+
+const openImageActions = () => {
+    const url = currentUrl();
+    if (!url) {
+        return;
+    }
+    const actions = [
+        {
+            label: '保存到相册 / 下载',
+            icon: 'iconDownload',
+            onClick: () => {
+                downloadCurrent();
+            },
+        },
+        {
+            label: '复制图片链接',
+            icon: 'iconCopy',
+            onClick: async () => {
+                const ok = await copyText(url);
+                toast(ok ? '已复制图片链接' : '复制失败，请手动复制');
+            },
+        },
+        {
+            label: '复制 Markdown',
+            icon: 'iconCopy',
+            onClick: async () => {
+                const ok = await copyText(`![image](${url})`);
+                toast(ok ? '已复制 Markdown' : '复制失败，请手动复制');
+            },
+        },
+        {
+            label: '在新标签打开',
+            icon: 'iconLink',
+            onClick: () => {
+                window.open(url, '_blank');
+            },
+        },
+    ];
+    if (typeof onDelete === 'function') {
+        actions.push({
+            label: '删除这张',
+            icon: 'iconTrashcan',
+            onClick: () => onDelete(url),
+        });
+    }
+    openMobileActionSheet(`${index + 1}/${urls.length} ${currentName()}`, actions);
+};
+
+const clearLongPress = () => {
+    if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+    }
+};
+
+const startLongPress = () => {
+    clearLongPress();
+    longPressed = false;
+    longPressTimer = setTimeout(() => {
+        longPressTimer = null;
+        longPressed = true;
+        try {
+            if (navigator.vibrate) {
+                navigator.vibrate(8);
+            }
+        } catch (e) {
+            // ignore
+        }
+        openImageActions();
+    }, LONG_PRESS_MS);
 };
 
 const distanceOf = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
@@ -144,9 +288,16 @@ const onTouchStart = (e) => {
     panY = ty;
     pinch = null;
     mode = scale > 1.01 ? 'pan' : null;
+    startLongPress();
 };
 
 const onTouchMove = (e) => {
+    if (startX && e.touches.length === 1) {
+        const t0 = e.touches[0];
+        if (Math.hypot(t0.clientX - startX, t0.clientY - startY) > LONG_PRESS_TOLERANCE) {
+            clearLongPress();
+        }
+    }
     if (mode === 'pinch' && e.touches.length >= 2 && pinch) {
         const ratio = distanceOf(e.touches[0], e.touches[1]) / pinch.distance;
         const middle = middleOf(e.touches[0], e.touches[1]);
@@ -240,6 +391,15 @@ const handleTap = (touch) => {
 const onTouchEnd = (e) => {
     const touch = (e.changedTouches && e.changedTouches[0]) || null;
 
+    clearLongPress();
+    if (longPressed) {
+        // 长按菜单已经弹出，这次抬手不再算点击/双击
+        longPressed = false;
+        mode = null;
+        pinch = null;
+        return;
+    }
+
     if (mode === 'pinch') {
         pinch = null;
         mode = null;
@@ -299,13 +459,14 @@ const onTouchEnd = (e) => {
     handleTap(touch);
 };
 
-export const openMobileImageViewer = (list, startIndex) => {
+export const openMobileImageViewer = (list, startIndex, options = {}) => {
     closeMobileImageViewer();
     urls = Array.isArray(list) ? list.slice() : [];
     if (!urls.length) {
         return null;
     }
     index = clamp(startIndex || 0, 0, urls.length - 1);
+    onDelete = typeof options.onDelete === 'function' ? options.onDelete : null;
 
     viewerEl = document.createElement('div');
     viewerEl.className = 'sppl-mobile-viewer';
