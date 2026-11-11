@@ -10,7 +10,7 @@
  */
 import { showMessage } from 'siyuan';
 import { openMobileActionSheet } from './mobile-actions';
-import { copyText } from './clipboard';
+import { copyText, copyImageFromUrl } from './clipboard';
 
 const MIN_SCALE = 1;
 const MAX_SCALE = 4;
@@ -254,6 +254,22 @@ const openImageActions = () => {
             icon: 'iconDownload',
             onClick: () => {
                 downloadCurrent();
+            },
+        },
+        {
+            label: '复制图片',
+            icon: 'iconCopy',
+            onClick: async () => {
+                const ok = await copyImageFromUrl(url);
+                if (ok) {
+                    toast('已复制图片，可直接粘贴');
+                    return;
+                }
+                // http / WebView 下写不了图片剪贴板，退回复制链接
+                const copied = await copyText(url);
+                toast(copied
+                    ? '当前环境不能复制图片，已复制链接（可在浏览器中打开保存）'
+                    : '当前环境不能复制图片，请手动复制链接');
             },
         },
         {

@@ -217,3 +217,43 @@ webView.setDownloadListener { url, userAgent, contentDisposition, mimetype, cont
 ```
 adb logcat | grep -iE "DownloadManager|DownloadListener"
 ```
+
+---
+
+# 八、复制图片到剪贴板
+
+菜单里的「复制图片」按这个顺序尝试：
+
+1. **壳子原生通道**：检测 `window.SpplShell.copyImageBase64(b64)`，存在就调用
+2. **标准 ClipboardItem**：`navigator.clipboard.write([new ClipboardItem({'image/png': blob})])`
+   （只在这些条件同时满足时可用：**https 或 localhost** + Chrome 76+ / Safari 13.4+）
+3. 都不行：自动退化为「复制图片链接」，并提示原因
+
+所以 http://192.168.x.x 这种 WebView 场景想让「复制图片」真正可用，壳子加一个 JS 接口即可：
+
+```kotlin
+class ShellBridge(private val ctx: Context) {
+    @JavascriptInterface
+    fun copyImageBase64(base64: String) {
+        val bytes = Base64.decode(base64, Base64.DEFAULT)
+        // 写到缓存目录，再用 FileProvider 生成 content://（Android 剪贴板不支持直接塞字节）
+        val file = File(ctx.cacheDir, "clip-${System.currentTimeMillis()}.png")
+        file.writeBytes(bytes)
+        val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", file)
+        val clip = ClipData.newUri(ctx.contentResolver, "image", uri)
+        val manager = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        manager.setPrimaryClip(clip)
+    }
+}
+
+webView.addJavascriptInterface(ShellBridge(this), "SpplShell")
+```
+
+注意：`addJavascriptInterface` 在 API 17+ 需要 `@JavascriptInterface` 注解，且只在主线程调用 UI 相关 API
+（`setPrimaryClip` 必须在主线程）。
+
+验证：壳子里长按图片 → 「复制图片」→ 打开微信/相册的粘贴，能看到图片。
+
+> 注：走壳子接口时传的是**原图字节**（JPEG 就传 JPEG），不再转 PNG。
+> 实测一张 3964×3109 的 JPEG：原图 3.4MB / base64 4.8MB；若先转 PNG 会变成 26MB 的字符串，WebView 很容易卡死。
+> 走标准 `ClipboardItem` 时才转 PNG，并先等比缩到最长边 2560（实测输出 2560×2008 / 8.2MB）。
