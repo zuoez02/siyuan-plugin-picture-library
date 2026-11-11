@@ -2,6 +2,7 @@
 
 ### 新增
 
+- 上传入口改为 label 包裹输入框（不依赖 id），点击即给出状态反馈；document 捕获层兜底监听任意 file input 的 change；新增 `window.spplReceiveUpload(名, MIME, base64)` 供自建 WebView 壳子在原生侧回传文件
 - 移动端上传改为 XHR、结果用 toast 直接弹出并带落盘路径；一次选择只发一次请求（change 之前被绑了两遍）；HEIC 直接拦掉并提示改格式
 - 上传前先把文件读进内存再发送，并在失败时报告「声明大小 vs 实际读到字节」（自建 WebView 套壳常回传不可读的 content:// 文件，导致请求根本没发出去）
 - 移动端顶部工具栏的下拉框改为**底部选择面板**：原生 `<select>` 在手机 WebView / iOS 上点它既不弹系统选择器也不派发 click，现在换成按钮 + 每项 52px 的面板，当前项高亮；桌面端仍用原生下拉框

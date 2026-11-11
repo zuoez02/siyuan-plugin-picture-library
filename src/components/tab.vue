@@ -81,10 +81,12 @@
                 <span>{{ _('showVideo') }}</span>
             </div>
             <div class="tab-setting-item">
-                <!-- 用 label for 触发：iOS 对 JS click() 打开的文件选择器偶尔不传 change -->
-                <label class="b3-button sppl-upload-label" for="uploadFile">{{ _('uploadImage') }}</label>
-                <input ref="uploadFile" type="file" name="uploadFile" id="uploadFile" multiple
-                    class="sppl-upload-input" accept="image/*,video/*">
+                <!-- 用 label 直接包住输入框：不依赖 id，避免页面里同名元素把选择器绑走 -->
+                <label class="b3-button sppl-upload-label" @click="onUploadTap">
+                    {{ _('uploadImage') }}
+                    <input ref="uploadFile" type="file" name="uploadFile" multiple
+                        class="sppl-upload-input" accept="image/*,video/*">
+                </label>
                 <div class="sppl-upload-status" v-if="uploadStatus">{{ uploadStatus }}</div>
             </div>
             <div class="tab-setting-item">
@@ -357,6 +359,12 @@ const ratioStyle = computed(() => {
     };
 });
 
+// label 自身会打开系统选择器；这里只做可见反馈。选完没有任何提示，
+// 就说明壳子没有把选择结果回传给 WebView（change 根本就没触发）。
+const onUploadTap = () => {
+    uploadStatus.value = '已打开文件选择器，等待选择…（选完无任何提示 = 壳子没把文件回调给 WebView）';
+}
+
 const onUpload = () => {
     uploadStatus.value = '打开文件选择器…';
     try {
@@ -364,7 +372,7 @@ const onUpload = () => {
     } catch (e) {
         uploadStatus.value = '打不开文件选择器：' + ((e && e.message) || e);
     }
-}
+};
 
 const onPaste = async () => {
     try {
@@ -701,15 +709,72 @@ const onFilesSelected = async (event) => {
     getImagesAndVideos();
 };
 
+// 壳子兜底通道：WebView 的 onShowFileChooser 如果回传不了文件（Android 常见），
+// 原生侧可以自己读字节 → base64 → evaluateJavascript("spplReceiveUpload(名, MIME, base64)")，
+// 走的是和网页上传同一条链路。
+const b64ToBytes = (b64) => {
+    const bin = atob(b64 || '');
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) {
+        bytes[i] = bin.charCodeAt(i);
+    }
+    return bytes;
+};
+
+const uploadFromShell = async (name, mime, base64) => {
+    const fileName = name || `shell-${Date.now()}.jpg`;
+    const bytes = b64ToBytes(base64);
+    if (!bytes.length) {
+        showMessage('壳子回传的是空文件');
+        return;
+    }
+    const blob = new File([bytes], fileName, { type: mime || '' });
+    const target = `${path}/${fileName}`;
+    uploadStatus.value = `上传中 ${fileName}（壳子通道）`;
+    const result = await putFile(target, blob, (pct) => {
+        uploadStatus.value = `上传中 ${fileName} ${pct}%`;
+    });
+    if (result.ok) {
+        showMessage(`已上传 → ${path}`);
+        getImagesAndVideos();
+    } else {
+        uploadStatus.value = `失败：${result.msg}`;
+        showMessage(`上传失败：${result.status ? 'HTTP ' + result.status + ' ' : ''}${result.msg}`);
+    }
+};
+
+const onAnyFileChange = (e) => {
+    const el = e.target;
+    if (!el || el.type !== 'file') {
+        return;
+    }
+    if (uploadFile.value && el === uploadFile.value) {
+        return; // 已经由自身监听处理
+    }
+    // 页面里还有别的 file input 被触发（壳子把 label 绑到别处时会这样），也走同一套上传
+    if (!(el.closest && (el.closest('.sppl-mobile-overlay') || el.closest('.sppl-plugin-tab')))) {
+        return;
+    }
+    onFilesSelected({ target: el });
+};
+
 onMounted(() => {
     getImagesAndVideos();
     if (uploadFile.value && !uploadFile.value.__spplBound) {
         uploadFile.value.__spplBound = true;
         uploadFile.value.addEventListener('change', onFilesSelected);
     }
+    document.addEventListener('change', onAnyFileChange, true);
+    // @ts-ignore 给壳子用的入口
+    window.spplReceiveUpload = uploadFromShell;
 });
 
 onUnmounted(() => {
+    document.removeEventListener('change', onAnyFileChange, true);
+    // @ts-ignore
+    if (window.spplReceiveUpload === uploadFromShell) {
+        delete window.spplReceiveUpload;
+    }
     if (timerAutoClipboard.value) {
         clearInterval(timerAutoClipboard.value);
     }
