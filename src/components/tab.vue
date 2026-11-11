@@ -93,12 +93,15 @@
                 <button class="b3-button" @click="onPaste">{{ _('pasteImage')
                     }}</button>
             </div>
-            <div class="tab-setting-item sppl-desktop-only">
+            <div class="tab-setting-item" v-if="desktopApp">
                 <button class="b3-button" @click="toggleClipboardWatch">{{ !timerAutoClipboard ? _('toggleClipboardWatchOn') : _('toggleClipboardWatchOff')
                     }}</button>
             </div>
-            <div class="tab-setting-item sppl-desktop-only">
+            <div class="tab-setting-item" v-if="desktopApp">
                 <button class="b3-button" @click="onShowInFloder">{{ _('showInFolder') }}</button>
+            </div>
+            <div class="tab-setting-item" v-else>
+                <button class="b3-button" @click="copyFolderPath">{{ _('copyFolderPath') }}</button>
             </div>
             <div class="tab-setting-item">
                 <button class="b3-button" @click="refresh">{{ _('refresh') }}</button>
@@ -178,7 +181,8 @@ import { getPngFunc, isPicture } from '../util/image';
 import InfiniteLoading from "v3-infinite-loading";
 import "v3-infinite-loading/lib/style.css";
 import View from './view.vue';
-import { isMobileFrontend } from '../util/mobile';
+import { isMobileFrontend, isDesktopApp } from '../util/mobile';
+import { copyText, copyImageBlob, hasAsyncClipboard } from '../util/clipboard';
 import { openMobilePlayer } from '../util/mobile-player';
 import { openMobileImageViewer } from '../util/mobile-image-viewer';
 import { openMobilePicker } from '../util/mobile-picker';
@@ -188,6 +192,8 @@ const { path } = inject('folder');
 const plugin = inject('plugin');
 
 const isMobile = isMobileFrontend();
+// Electron 桌面端才有 window.require / @electron/remote
+const desktopApp = isDesktopApp();
 
 // 移动端用自建预览层（支持左右切换 / 上滑关闭 / 双指缩放）
 const onMangaClick = (i) => {
@@ -375,6 +381,12 @@ const onUpload = () => {
 };
 
 const onPaste = async () => {
+    if (!hasAsyncClipboard() || !navigator.clipboard.read) {
+        // http（非安全上下文）下浏览器不允许主动读剪贴板，只能等用户自己粘贴
+        uploadStatus.value = '当前环境不能主动读剪贴板，请直接在页面上按 Ctrl+V / 长按粘贴';
+        showMessage('请直接按 Ctrl+V / 长按粘贴图片');
+        return;
+    }
     try {
         const item_list = await navigator.clipboard.read();
         const blob = await item_list[0]?.getType('image/png');
@@ -386,6 +398,11 @@ const onPaste = async () => {
         await plugin.storage.addFileBlob(path, blob, `${id}.png`);
         getImagesAndVideos();
     } catch (e) {
+        if (!isDesktopApp()) {
+            console.error(e);
+            showMessage(_('onPasteError'));
+            return;
+        }
         try {
             // @ts-ignore
             const { clipboard } = window.require('electron');
@@ -422,10 +439,28 @@ const onPaste = async () => {
 }
 
 const onShowInFloder = () => {
-    // @ts-ignore
-    const { shell } = window.require('@electron/remote') // deconstructing assignment
-    const absPath = window.siyuan.config.system.workspaceDir + path;
-    shell.showItemInFolder(absPath);
+    if (!isDesktopApp()) {
+        copyFolderPath();
+        return;
+    }
+    try {
+        // @ts-ignore
+        const { shell } = window.require('@electron/remote');
+        const absPath = window.siyuan.config.system.workspaceDir + path;
+        shell.showItemInFolder(absPath);
+    } catch (e) {
+        console.error(e);
+        showMessage('打开文件管理器失败，已复制路径');
+        copyFolderPath();
+    }
+}
+
+// 浏览器 / 移动端没有 shell，「在文件管理器中打开」退化为复制文件夹路径
+const copyFolderPath = async () => {
+    const absPath = ((window.siyuan && window.siyuan.config && window.siyuan.config.system
+        && window.siyuan.config.system.workspaceDir) || '') + path;
+    const ok = await copyText(absPath);
+    showMessage(ok ? `已复制路径：${absPath}` : '复制失败，请手动复制');
 }
 
 const prepareVideoEl = (el) => {
@@ -743,6 +778,45 @@ const uploadFromShell = async (name, mime, base64) => {
     }
 };
 
+// 浏览器端没有剪贴板轮询，改为捕获用户主动粘贴（http 下同样有效）
+const uploadBlob = async (blob, name) => {
+    const target = `${path}/${name}`;
+    uploadStatus.value = `上传中 ${name}`;
+    const result = await putFile(target, blob, (pct) => {
+        uploadStatus.value = `上传中 ${name} ${pct}%`;
+    });
+    if (result.ok) {
+        showMessage(`已上传 → ${path}`);
+        getImagesAndVideos();
+    } else {
+        uploadStatus.value = `失败：${result.msg}`;
+        showMessage(`上传失败：${result.status ? 'HTTP ' + result.status + ' ' : ''}${result.msg}`);
+    }
+};
+
+const onGlobalPaste = async (e) => {
+    if (isDesktopApp()) {
+        return; // 桌面端有 Electron 剪贴板方案
+    }
+    const items = (e.clipboardData && e.clipboardData.items) || [];
+    let blob = null;
+    for (const item of items) {
+        if (item.kind === 'file' && /^image\//.test(item.type)) {
+            blob = item.getAsFile();
+            if (blob) {
+                break;
+            }
+        }
+    }
+    if (!blob) {
+        return;
+    }
+    // @ts-ignore
+    const id = window.Lute.NewNodeID();
+    const sub = (blob.type || 'image/png').split('/')[1] || 'png';
+    await uploadBlob(blob, `${id}.${sub === 'jpeg' ? 'jpg' : sub}`);
+};
+
 const onAnyFileChange = (e) => {
     const el = e.target;
     if (!el || el.type !== 'file') {
@@ -765,12 +839,14 @@ onMounted(() => {
         uploadFile.value.addEventListener('change', onFilesSelected);
     }
     document.addEventListener('change', onAnyFileChange, true);
+    document.addEventListener('paste', onGlobalPaste);
     // @ts-ignore 给壳子用的入口
     window.spplReceiveUpload = uploadFromShell;
 });
 
 onUnmounted(() => {
     document.removeEventListener('change', onAnyFileChange, true);
+    document.removeEventListener('paste', onGlobalPaste);
     // @ts-ignore
     if (window.spplReceiveUpload === uploadFromShell) {
         delete window.spplReceiveUpload;
@@ -878,18 +954,33 @@ const copyImageBlock = (path) => {
     const d = `${date.getFullYear()}${date.getMonth()}${date.getDay()}${date.getHours()}${date.getMinutes()}${date.getSeconds()}`
     const block = `![image](${path})
 {: id="${id}" updated="${d}"}`
-    navigator.clipboard.writeText(block);
+    copyText(block).then((ok) => {
+        if (!ok) {
+            showMessage('复制失败，请手动复制');
+        }
+    });
 };
 
-const copyUrl = (path) => {
-    navigator.clipboard.writeText(path);
+const copyUrl = async (path) => {
+    const ok = await copyText(path);
+    if (!ok) {
+        showMessage('复制失败，请手动复制');
+    }
 };
 
 const copyAsPng = async (path) => {
-    const png = await getPngFunc(path);
-    return navigator.clipboard.write([new ClipboardItem({
-        'image/png': png,
-    })]);
+    try {
+        const png = await getPngFunc(path);
+        const ok = await copyImageBlob(png);
+        if (!ok) {
+            showMessage('当前环境不支持复制图片（需要 https 或 localhost）');
+        }
+        return ok;
+    } catch (e) {
+        console.error(e);
+        showMessage('复制图片失败');
+        return false;
+    }
 }
 
 const deleteFileConfirm = (path) => {
@@ -954,6 +1045,11 @@ let timerImage = '';
 let initImage = false;
 
 const toggleClipboardWatch = () => {
+    // 浏览器端无法轮询剪贴板，按钮本身已隐藏，这里再兜一层
+    if (!isDesktopApp()) {
+        showMessage('浏览器端不支持自动粘贴，请直接在页面上按 Ctrl+V / 长按粘贴');
+        return;
+    }
     if (timerAutoClipboard.value) {
         clearInterval(timerAutoClipboard.value);
         timerAutoClipboard.value = null;

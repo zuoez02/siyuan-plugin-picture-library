@@ -2,6 +2,11 @@
 
 ### 新增
 
+- 浏览器/移动端不再依赖 Electron：
+  - 「在文件资源管理器中打开」在非桌面端换成「复制文件夹路径」
+  - 「自动粘贴（剪贴板监视）」只在 Electron 桌面端显示，浏览器端改为在页面里直接 Ctrl+V / 长按粘贴即可上传
+  - 所有复制操作增加 `execCommand` 兜底，修掉 http（非安全上下文）下 `navigator.clipboard` 不存在导致的静默失败
+  - 复制图片在缺少 `ClipboardItem` 时给出明确提示，不再抛错
 - 上传入口改为 label 包裹输入框（不依赖 id），点击即给出状态反馈；document 捕获层兜底监听任意 file input 的 change；新增 `window.spplReceiveUpload(名, MIME, base64)` 供自建 WebView 壳子在原生侧回传文件
 - 移动端上传改为 XHR、结果用 toast 直接弹出并带落盘路径；一次选择只发一次请求（change 之前被绑了两遍）；HEIC 直接拦掉并提示改格式
 - 上传前先把文件读进内存再发送，并在失败时报告「声明大小 vs 实际读到字节」（自建 WebView 套壳常回传不可读的 content:// 文件，导致请求根本没发出去）

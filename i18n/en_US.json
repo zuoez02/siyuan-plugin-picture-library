@@ -60,5 +60,6 @@
   "more": "More",
   "uploadUnsupported": "Unsupported file type. Allowed: %s",
   "uploadSkipped": "Skipped %s unsupported file(s)",
-  "uploadFailed": "Upload failed: %s"
+  "uploadFailed": "Upload failed: %s",
+  "copyFolderPath": "Copy folder path"
 }

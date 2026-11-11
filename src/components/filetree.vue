@@ -8,13 +8,14 @@
 <script setup>
 import { inject, watch, ref } from 'vue'
 import { createFolder } from '../util/dialog';
-import { openTab, confirm } from 'siyuan';
+import { openTab, confirm, showMessage } from 'siyuan';
 import { _ } from '../util/i18n';
 import { TAB_TYPE, ICON } from '../util/constants'
 import { buildGalleryMarkdown } from '../util/gallery-link';
 import { openMobileGallery } from '../util/mobile-gallery';
 import { isMobileFrontend } from '../util/mobile';
 import { openMobileActionSheet } from '../util/mobile-actions';
+import { copyText } from '../util/clipboard';
 
 const plugin = inject('plugin');
 const storage = plugin.storage;
@@ -33,15 +34,22 @@ const updateDatasource = (s) => {
   });
 }
 
-const copyLink = (node) => {
-  navigator.clipboard.writeText(buildGalleryMarkdown(node));
+const copyLink = async (node) => {
+  const ok = await copyText(buildGalleryMarkdown(node));
+  if (!ok) {
+    showMessage('复制失败，请手动复制');
+  }
 };
 
 const copyCarousel = (node) => {
   const randomId = window.Lute.NewNodeID();
   const content = `<div><div id="${randomId}" data-plugin="siyuan-plugin-picture-library" data-height="400px" data-path="${node.path}">请使用Siyuan Plugin Picture Library插件已使用此自定义块内容</div></div>
 {: custom-plugin-id="siyuan-plugin-picture-library" id="${randomId}"}`;
-  navigator.clipboard.writeText(content);
+  copyText(content).then((ok) => {
+    if (!ok) {
+      showMessage('复制失败，请手动复制');
+    }
+  });
 };
 
 const addFolder = (node) => {

@@ -60,5 +60,6 @@
   "more": "更多",
   "uploadUnsupported": "不支持的文件类型，可上传：%s",
   "uploadSkipped": "已跳过 %s 个不支持的文件",
-  "uploadFailed": "上传失败：%s"
+  "uploadFailed": "上传失败：%s",
+  "copyFolderPath": "复制文件夹路径"
 }
