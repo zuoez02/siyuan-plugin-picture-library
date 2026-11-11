@@ -28,14 +28,18 @@ export const closeMobileGallery = () => {
 
 const SWIPE_CLOSE_DISTANCE = 80;
 const SWIPE_HORIZONTAL_RATIO = 1.5;
+const SWIPE_CLAIM_DISTANCE = 12;
 
 /**
  * 右滑关闭图库浮层（不做跟手动画）。
- * 只认「向右为主、位移够大」的滑动，避免和纵向滚动、点按冲突；
- * 上面还压着播放器 / 大图预览时交给它们自己处理。
+ *
+ * 思源移动端在 document 上挂了自己的 touch 手势（冒泡阶段），我们判定为
+ * 「右滑关闭」后要 stopPropagation，否则事件会继续冒泡，把思源自己的
+ * 手势（侧滑开侧边栏 / 返回）也一起触发。
  */
 const bindSwipeToClose = (el) => {
     let tracking = false;
+    let claimed = false;
     let startX = 0;
     let startY = 0;
 
@@ -43,11 +47,31 @@ const bindSwipeToClose = (el) => {
 
     el.addEventListener('touchstart', (e) => {
         tracking = e.touches.length === 1 && !hasLayerAbove();
+        claimed = false;
         if (tracking) {
             startX = e.touches[0].clientX;
             startY = e.touches[0].clientY;
         }
     }, { passive: true });
+
+    el.addEventListener('touchmove', (e) => {
+        if (!tracking || e.touches.length !== 1) {
+            return;
+        }
+        const touch = e.touches[0];
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+        if (!claimed && dx > SWIPE_CLAIM_DISTANCE && Math.abs(dx) > Math.abs(dy)) {
+            claimed = true;
+        }
+        if (claimed) {
+            // 不让事件冒泡到 document，思源的全局手势就收不到了
+            e.stopPropagation();
+            if (e.cancelable) {
+                e.preventDefault();
+            }
+        }
+    }, { passive: false });
 
     el.addEventListener('touchend', (e) => {
         if (!tracking) {
@@ -60,14 +84,19 @@ const bindSwipeToClose = (el) => {
         }
         const dx = touch.clientX - startX;
         const dy = touch.clientY - startY;
-        if (dx < SWIPE_CLOSE_DISTANCE || Math.abs(dx) < Math.abs(dy) * SWIPE_HORIZONTAL_RATIO) {
-            return;
+        const isCloseSwipe = dx >= SWIPE_CLOSE_DISTANCE && Math.abs(dx) >= Math.abs(dy) * SWIPE_HORIZONTAL_RATIO;
+        if (claimed || isCloseSwipe) {
+            e.stopPropagation();
         }
-        closeMobileGallery();
+        claimed = false;
+        if (isCloseSwipe) {
+            closeMobileGallery();
+        }
     });
 
     el.addEventListener('touchcancel', () => {
         tracking = false;
+        claimed = false;
     });
 };
 
