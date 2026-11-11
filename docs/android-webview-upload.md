@@ -175,3 +175,45 @@ fun uploadFromShell(uri: Uri, name: String, mime: String) {
 - 走的是网页同一条上传链路（进度、落盘、刷新都有）
 - 适合图片（单文件建议 ≤ 10MB）；**视频不要走这条路**，base64 会放大 1/3，容易 OOM
 - 大文件需要分片接口时再找插件方加 `spplUploadBegin/Chunk/End`
+
+---
+
+# 七、下载（保存图片）适配
+
+网页端点「保存到相册 / 下载」时，插件会创建一个 `<a download href="http://<host>/public/.../xxx.jpg">` 并触发点击，
+**不会再使用 `blob:` 地址**（WebView 的下载监听基本不认 `blob:`，多数壳子会直接提示「暂不支持」）。
+
+壳子需要实现 `DownloadListener`，把请求交给系统 `DownloadManager`：
+
+```kotlin
+webView.setDownloadListener { url, userAgent, contentDisposition, mimetype, contentLength ->
+    if (!url.startsWith("http")) return@setDownloadListener   // blob:/data: 交给网页自己处理
+
+    val fileName = URLUtil.guessFileName(url, contentDisposition, mimetype)
+    val request = DownloadManager.Request(Uri.parse(url)).apply {
+        setMimeType(mimetype)
+        setTitle(fileName)
+        setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+        setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+        // 关键：图库文件走 Cookie 鉴权，不带上会 401 / 跳登录页
+        addRequestHeader("Cookie", CookieManager.getInstance().getCookie(url) ?: "")
+    }
+    (getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
+}
+```
+
+要点：
+
+- **必须带 Cookie**，否则 `/public/...` 的下载请求会被鉴权拦掉
+- 不要拦 `blob:` / `data:`（这些是网页内部对象，`DownloadManager` 无法处理）
+- 若想直接存到相册，`DownloadManager` 下载完后再用 `MediaScannerConnection.scanFile()` 扫一次，
+  或在 Android 10+ 用 `MediaStore.Images` 写入
+- 更省事的替代方案：壳子暴露一个 JS 桥 `SpplShell.saveImage(url, name)`，
+  原生侧自己下载 + 存相册，网页在 `isWebView()` 分支里优先调用它
+
+验证：在壳子里打开图库 → 长按图片 → 「保存到相册 / 下载」→ 通知栏出现下载完成 →
+文件出现在 `Downloads/`。失败时可看 logcat：
+
+```
+adb logcat | grep -iE "DownloadManager|DownloadListener"
+```

@@ -157,21 +157,73 @@ const toast = (msg) => {
  * 2. a[download] 触发浏览器下载
  * 3. 退化为新标签打开，由用户长按保存
  */
+const isWebView = () => /;\s*wv\b|WebView/i.test(navigator.userAgent || '');
+
+/**
+ * 保存 / 下载当前图。
+ *
+ * 顺序很关键：WebView 的 DownloadListener 基本只认 http(s) 直链，
+ * 给 blob: 会被宿主判成「暂不支持」。所以：
+ * 1. 移动浏览器：系统分享面板（可直接存相册）
+ * 2. 同源直链 + download 属性（WebView 也能拿到正常 URL）
+ * 3. 跨域或直链失败：fetch 成 Blob 再下载
+ * 4. 都不行：新标签打开，让用户长按保存
+ */
 const downloadCurrent = async () => {
     const url = currentUrl();
     if (!url) {
         return;
     }
     const name = currentName();
-    const hint = () => toast('已开始下载：' + name);
+    const sameOrigin = (() => {
+        try {
+            return new URL(url, location.href).origin === location.origin;
+        } catch (e) {
+            return false;
+        }
+    })();
+
+    // 1) 系统分享（Chrome / 部分厂商浏览器）
+    if (!isWebView() && sameOrigin) {
+        try {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            const file = new File([blob], name, { type: blob.type || 'image/jpeg' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title: name });
+                return;
+            }
+        } catch (e) {
+            // 继续走直链下载
+        }
+    }
+
+    // 2) 同源直链 + download：WebView 的 DownloadListener 认这种
+    if (sameOrigin) {
+        try {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = name;
+            a.rel = 'noopener';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            if (isWebView()) {
+                // 宿主如果没实现下载监听，这句能给出下一步怎么办
+                toast('已请求下载；若提示「暂不支持」，请改用「复制图片链接」在浏览器打开');
+            } else {
+                toast('已开始下载：' + name);
+            }
+            return;
+        } catch (e) {
+            // 落到 Blob 方案
+        }
+    }
+
+    // 3) Blob 兜底
     try {
         const res = await fetch(url);
         const blob = await res.blob();
-        const file = new File([blob], name, { type: blob.type || 'image/jpeg' });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file], title: name });
-            return;
-        }
         const href = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = href;
@@ -183,9 +235,9 @@ const downloadCurrent = async () => {
             URL.revokeObjectURL(href);
             a.remove();
         }, 5000);
-        hint();
+        toast('已开始下载：' + name);
     } catch (e) {
-        // 兜底：新标签打开，用户可以长按保存
+        // 4) 最后兜底
         window.open(url, '_blank');
         toast('已在新标签打开，可长按保存');
     }
