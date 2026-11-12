@@ -3,6 +3,7 @@
 ### 新增
 
 - 新增**瀑布流布局**（第 4 种模式）：CSS 多列按每张图的原始宽高比自然排布；列数 = 容器宽度 ÷「尺寸」设置，手机 2–6 列、桌面 1–8 列，面板宽度变化用 ResizeObserver 跟随；视频以 16:9 卡片混排；老配置会自动补上该模式
+- 修复瀑布流无法滚动：`.sppl-plugin-tab` 是 `overflow:hidden`，网格模式靠 `.image-wall` 自己滚；`.waterfall-wrap` 补上 `flex:1 1 auto; min-height:0; overflow-y:auto`
 - 移动端大图预览支持**长按菜单**：保存到相册 / 下载、复制图片链接、复制 Markdown、在新标签打开、删除这张（删完自动刷新图库）；下载优先走系统分享面板，退化为 `a[download]`，再退化为新标签打开
 - 下载改为同源**直链 + `download` 属性**（不再用 `blob:`，WebView 的下载监听不认 blob，宿主会提示「暂不支持」）；顺序为 系统分享 → 直链 → Blob → 新标签
 - 长按菜单新增**「复制图片」**：优先壳子原生接口 `SpplShell.copyImageBase64`（传原图字节），其次标准 `ClipboardItem`（超大图缩到最长边 2560），都不行则自动退回复制链接

@@ -557,6 +557,14 @@ div[custom-plugin-id="siyuan-plugin-picture-library"] > .protyle-icons {
 /* ===== 瀑布流（按图片原始宽高比排列，CSS 多列） ===== */
 .waterfall-wrap {
     display: block;
+    /* .sppl-plugin-tab 是 overflow:hidden，网格模式靠 .image-wall 自己滚，
+       瀑布流也必须自己成为滚动容器，否则内容被直接裁掉（表现为「没法滚动」） */
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 4px;
 }
 
 .waterfall-wall {
