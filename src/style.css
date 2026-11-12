@@ -70,6 +70,8 @@ div[custom-plugin-id="siyuan-plugin-picture-library"] > .protyle-icons {
     color: var(--b3-theme-on-background);
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
+    /* 横向手势由我们自己的右滑关闭接管，别让浏览器/WebView 当成导航手势 */
+    touch-action: pan-y;
 }
 
 .sppl-mobile-overlay__bar {

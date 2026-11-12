@@ -9,6 +9,7 @@ let overlay = null;
 let app = null;
 
 export const closeMobileGallery = () => {
+    unbindSwipeToClose();
     closeMobilePlayer();
     closeMobileImageViewer();
     if (app) {
@@ -30,31 +31,45 @@ const SWIPE_CLOSE_DISTANCE = 80;
 const SWIPE_HORIZONTAL_RATIO = 1.5;
 const SWIPE_CLAIM_DISTANCE = 12;
 
+let unbindSwipe = null;
+
+const unbindSwipeToClose = () => {
+    if (typeof unbindSwipe === 'function') {
+        unbindSwipe();
+        unbindSwipe = null;
+    }
+};
+
 /**
  * 右滑关闭图库浮层（不做跟手动画）。
  *
- * 思源移动端在 document 上挂了自己的 touch 手势（冒泡阶段），我们判定为
- * 「右滑关闭」后要 stopPropagation，否则事件会继续冒泡，把思源自己的
- * 手势（侧滑开侧边栏 / 返回）也一起触发。
+ * 关键点：监听挂在 **window 的捕获阶段**。
+ * 之前挂在浮层上是冒泡阶段，思源自己在 document / window 上的手势监听
+ * （侧边栏、返回）在捕获阶段就已经跑完了，stopPropagation 拦不住，
+ * 于是右滑关图库的同时，下面本体的右侧边栏也被滑没了。
+ * 捕获阶段 + stopImmediatePropagation 才能让后面的监听全部收不到。
  */
-const bindSwipeToClose = (el) => {
+const bindSwipeToClose = () => {
+    unbindSwipeToClose();
+
     let tracking = false;
     let claimed = false;
     let startX = 0;
     let startY = 0;
 
+    const inOverlay = (el) => !!(el && el.closest && el.closest('.sppl-mobile-overlay'));
     const hasLayerAbove = () => !!document.querySelector('.sppl-mobile-player, .sppl-mobile-viewer');
 
-    el.addEventListener('touchstart', (e) => {
-        tracking = e.touches.length === 1 && !hasLayerAbove();
+    const onStart = (e) => {
         claimed = false;
+        tracking = e.touches.length === 1 && !hasLayerAbove() && inOverlay(e.target);
         if (tracking) {
             startX = e.touches[0].clientX;
             startY = e.touches[0].clientY;
         }
-    }, { passive: true });
+    };
 
-    el.addEventListener('touchmove', (e) => {
+    const onMove = (e) => {
         if (!tracking || e.touches.length !== 1) {
             return;
         }
@@ -65,39 +80,52 @@ const bindSwipeToClose = (el) => {
             claimed = true;
         }
         if (claimed) {
-            // 不让事件冒泡到 document，思源的全局手势就收不到了
-            e.stopPropagation();
+            e.stopImmediatePropagation();
             if (e.cancelable) {
                 e.preventDefault();
             }
         }
-    }, { passive: false });
+    };
 
-    el.addEventListener('touchend', (e) => {
+    const onEnd = (e) => {
         if (!tracking) {
             return;
         }
         tracking = false;
-        const touch = e.changedTouches && e.changedTouches[0];
+        const touch = (e.changedTouches && e.changedTouches[0]) || null;
         if (!touch || hasLayerAbove()) {
+            claimed = false;
             return;
         }
         const dx = touch.clientX - startX;
         const dy = touch.clientY - startY;
         const isCloseSwipe = dx >= SWIPE_CLOSE_DISTANCE && Math.abs(dx) >= Math.abs(dy) * SWIPE_HORIZONTAL_RATIO;
         if (claimed || isCloseSwipe) {
-            e.stopPropagation();
+            e.stopImmediatePropagation();
         }
         claimed = false;
         if (isCloseSwipe) {
             closeMobileGallery();
         }
-    });
+    };
 
-    el.addEventListener('touchcancel', () => {
+    const onCancel = () => {
         tracking = false;
         claimed = false;
-    });
+    };
+
+    const opts = { capture: true };
+    window.addEventListener('touchstart', onStart, { capture: true, passive: true });
+    window.addEventListener('touchmove', onMove, { capture: true, passive: false });
+    window.addEventListener('touchend', onEnd, opts);
+    window.addEventListener('touchcancel', onCancel, opts);
+
+    unbindSwipe = () => {
+        window.removeEventListener('touchstart', onStart, { capture: true });
+        window.removeEventListener('touchmove', onMove, { capture: true });
+        window.removeEventListener('touchend', onEnd, opts);
+        window.removeEventListener('touchcancel', onCancel, opts);
+    };
 };
 
 /**
@@ -136,7 +164,7 @@ export const openMobileGallery = (plugin, folder) => {
     app.provide('folder', folder);
     app.mount(overlay.querySelector('.sppl-mobile-overlay__body'));
 
-    bindSwipeToClose(overlay);
+    bindSwipeToClose();
 
     return overlay;
 };
