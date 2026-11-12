@@ -28,7 +28,7 @@ export default class PictureLibraryPlugin extends Plugin {
     sizes: [100, 200, 400, 600, 800],
     mangaSize: '50%',
     mangaSizes: ['100%', '90%', '85%', '80%', '70%', '60%', '50%', '40%', '30%'],
-    modes: ['grid', 'manga'],
+    modes: ['grid', 'manga', 'waterfall'],
     mode: 'grid',
     overwrite: false,
     sort: 'nameIncrease',
@@ -183,6 +183,12 @@ export default class PictureLibraryPlugin extends Plugin {
       this.saveData('setting.json', this.setting);
     } else {
       Object.assign(this.setting, s);
+      // 老配置里没有新加的布局模式，补上，否则下拉框里看不到瀑布流
+      if (!Array.isArray(this.setting.modes) || !this.setting.modes.length) {
+        this.setting.modes = ['grid', 'manga', 'waterfall'];
+      } else if (!this.setting.modes.includes('waterfall')) {
+        this.setting.modes = [...this.setting.modes, 'waterfall'];
+      }
     }
     this.storage.init(this.folders);
   }

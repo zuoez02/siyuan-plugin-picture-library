@@ -13,7 +13,7 @@
                     <svg class="sppl-picker__arrow"><use xlink:href="#iconDown"></use></svg>
                 </button>
             </div>
-            <div class="tab-setting-item" v-if="setting.mode === 'grid'">
+            <div class="tab-setting-item" v-if="setting.mode === 'grid' || setting.mode === 'waterfall'">
                 <div class="b3-label__text">{{ _('size') }}</div>
                 <select v-if="!isMobile" class="b3-select" v-model="setting.size">
                     <option v-for="k in setting.sizes" :value="k">{{ k }}</option>
@@ -153,6 +153,32 @@
             <InfiniteLoading @infinite="onInfiniteLoad" 
                 v-show="infiniteImages.length !== images.length" />
         </div>
+        <div class="waterfall-wrap" v-if="setting.mode === 'waterfall'">
+            <div class="waterfall-wall" ref="waterfallWall" :style="{ columnCount: waterfallColumns }">
+                <View v-if="setting.showImage" :key="f" v-for="(f, $i) in infiniteImages"
+                    class="sppl-image sppl-waterfall-item" fit="none"
+                    :hide-on-click-modal="false"
+                    :preview-teleported="true"
+                    :src="f" @contextmenu="onContextClick(f, $event)"
+                    :initial-index="$i" :preview-src-list="images" loading="lazy" decoding="async">
+                    <template #error>
+                        <div class="image-slot" @click="() => sm(f)" @contextmenu="onContextClick(f, $event)">
+                            {{ _('loadFailed') }}
+                        </div>
+                    </template>
+                </View>
+                <div class="waterfall-video" v-if="setting.showVideo" :key="f" v-for="f in videoUrls"
+                    @contextmenu="onContextClick(f, $event)" v-on:click="() => onClickVideo(f)">
+                    <video :src="videoSrc(f)" preload="metadata" loop muted playsinline
+                        :ref="(el) => prepareVideoEl(el)"></video>
+                    <div class="play-icon">
+                        <svg><use xlink:href="#iconPlay"></use></svg>
+                    </div>
+                </div>
+            </div>
+            <InfiniteLoading @infinite="onInfiniteLoad"
+                v-show="infiniteImages.length !== images.length" />
+        </div>
         <div class="manga-wall" v-if="setting.showImage && setting.mode === 'manga'">
             <el-image :key="f" v-for="(f, $i) in images" class="sppl-manga" :style="mangaStyle" :src="f" fit="cover"
                 :hide-on-click-modal="true"
@@ -172,7 +198,7 @@
     </div>
 </template>
 <script setup>
-import { computed, inject, onErrorCaptured, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, inject, nextTick, onErrorCaptured, onMounted, onUnmounted, ref, watch } from 'vue';
 import { getFiles } from '../storage/file';
 import { showMessage, Menu, confirm, openTab } from 'siyuan';
 import { FILE_EXT, VIDEO_EXT } from '../util/constants';
@@ -258,6 +284,15 @@ setting.value.ratio = setting.value.ratio || '3:4';
 setting.value.ratioSize = setting.value.ratioSize || 100;
 
 watch(setting.value, () => plugin.saveSetting(setting.value));
+
+// 尺寸 / 布局变化时重算瀑布流列数
+watch(() => [setting.value.size, setting.value.mode], async () => {
+    if (setting.value.mode !== 'waterfall') {
+        return;
+    }
+    await nextTick();
+    observeWaterfallWall();
+});
 
 const total = computed(() => {
     return (setting.value.showVideo ? videoUrls.value.length : 0)
@@ -357,6 +392,39 @@ const compare = (a, b) => {
 }
 
 const gridClass = computed(() => 'size_' + setting.value.size)
+
+// 瀑布流：每张图按自身宽高比自然排列（CSS 多列），列数随容器宽度和「尺寸」自适应
+const waterfallColumns = ref(2);
+const waterfallWall = ref(null);
+let wallObserver = null;
+
+// 列数按**容器实际宽度**算：桌面端 tab 面板可能只占半个窗口，
+// 用 window.innerWidth 会把图片挤成很窄的条
+const updateWaterfallColumns = () => {
+    const el = waterfallWall.value;
+    const width = Math.max(240, (el && el.clientWidth) || (window.innerWidth - 24));
+    const target = Math.max(90, Number(setting.value.size) || 200);
+    const min = isMobile ? 2 : 1;
+    const max = isMobile ? 6 : 8;
+    const cols = Math.round(width / target);
+    waterfallColumns.value = Math.min(max, Math.max(min, cols));
+};
+
+const observeWaterfallWall = () => {
+    if (wallObserver) {
+        wallObserver.disconnect();
+        wallObserver = null;
+    }
+    const el = waterfallWall.value;
+    if (!el) {
+        return;
+    }
+    updateWaterfallColumns();
+    if (typeof ResizeObserver === 'function') {
+        wallObserver = new ResizeObserver(() => updateWaterfallColumns());
+        wallObserver.observe(el);
+    }
+};
 
 const mangaStyle = computed(() => ({
     width: `${setting.value.mangaSize}`,
@@ -845,6 +913,12 @@ onMounted(() => {
     getImagesAndVideos();
     // 大图预览层里删图后，让当前页签重新拉一次列表
     offGalleryRefresh = onGalleryRefresh(() => getImagesAndVideos());
+    observeWaterfallWall();
+    window.addEventListener('resize', updateWaterfallColumns);
+    // 老配置的 modes 里没有瀑布流：这里用响应式数组补上，否则下拉框看不到
+    if (Array.isArray(setting.value.modes) && !setting.value.modes.includes('waterfall')) {
+        setting.value.modes.push('waterfall');
+    }
     if (uploadFile.value && !uploadFile.value.__spplBound) {
         uploadFile.value.__spplBound = true;
         uploadFile.value.addEventListener('change', onFilesSelected);
@@ -859,6 +933,11 @@ onUnmounted(() => {
     if (typeof offGalleryRefresh === 'function') {
         offGalleryRefresh();
         offGalleryRefresh = null;
+    }
+    window.removeEventListener('resize', updateWaterfallColumns);
+    if (wallObserver) {
+        wallObserver.disconnect();
+        wallObserver = null;
     }
     document.removeEventListener('change', onAnyFileChange, true);
     document.removeEventListener('paste', onGlobalPaste);
